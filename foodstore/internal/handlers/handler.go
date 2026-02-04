@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	// "fmt"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -13,14 +12,12 @@ import (
 	"foodstore/internal/services"
 )
 
-// HealthHandler responds to GET /health with a basic health status.
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
 }
 
-// ProductHandler holds a reference to ProductService.
 type ProductHandler struct {
 	service *services.ProductService
 }
@@ -29,7 +26,6 @@ func NewProductHandler(ps *services.ProductService) *ProductHandler {
 	return &ProductHandler{service: ps}
 }
 
-// ListProducts handles GET /products.
 func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -149,7 +145,6 @@ func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// OrderHandler holds a reference to OrderService.
 type OrderHandler struct {
 	service *services.OrderService
 }
@@ -158,13 +153,11 @@ func NewOrderHandler(os *services.OrderService) *OrderHandler {
 	return &OrderHandler{service: os}
 }
 
-// PlaceOrder handles POST /orders.
 func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// Read and parse the JSON request body.
 	var reqBody struct {
 		UserID int `json:"user_id"`
 		Items  []struct {
@@ -183,7 +176,6 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON format"})
 		return
 	}
-	// Convert request items to model.OrderItem slice for the service.
 	items := make([]models.OrderItem, len(reqBody.Items))
 	for i, item := range reqBody.Items {
 		items[i] = models.OrderItem{
@@ -191,7 +183,6 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 			Quantity:  item.Quantity,
 		}
 	}
-	// Call the service to place the order.
 	orderID, err := oh.service.PlaceOrder(reqBody.UserID, items)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrProductNotFound) {
@@ -205,12 +196,10 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
-	// Return the new Order ID as confirmation.
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{"order_id": orderID})
 }
 
-// ContactHandler holds a reference to ContactService.
 type ContactHandler struct {
 	service *services.ContactService
 }
@@ -219,19 +208,15 @@ func NewContactHandler(cs *services.ContactService) *ContactHandler {
 	return &ContactHandler{service: cs}
 }
 
-// HandleContact serves the contact page (GET) and processes submissions (POST).
 func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		// Serve the static contact form page.
 		http.ServeFile(w, r, "frontend/pages/contacts.html")
 		return
 	}
 	if r.Method == http.MethodPost {
-		// Determine content type to parse input accordingly.
 		ct := r.Header.Get("Content-Type")
 		var name, email, message string
 		if strings.HasPrefix(ct, "application/json") {
-			// If JSON, decode request body to get the fields.
 			var reqBody struct {
 				Name    string `json:"name"`
 				Email   string `json:"email"`
@@ -245,7 +230,6 @@ func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) 
 			}
 			name, email, message = reqBody.Name, reqBody.Email, reqBody.Message
 		} else {
-			// Otherwise, assume form data (content-type: application/x-www-form-urlencoded).
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Invalid form data", http.StatusBadRequest)
 				return
@@ -254,21 +238,18 @@ func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) 
 			email = r.FormValue("email")
 			message = r.FormValue("message")
 		}
-		// Basic validation: require all fields.
 		if name == "" || email == "" || message == "" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "All fields are required"})
 			return
 		}
-		// Use the service to handle the contact message.
 		if err := ch.service.SendMessage(name, email, message); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// Respond with a confirmation (JSON).
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "ok",
@@ -276,6 +257,5 @@ func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) 
 		})
 		return
 	}
-	// If method is not GET or POST:
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
