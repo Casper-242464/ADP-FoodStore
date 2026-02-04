@@ -1,6 +1,8 @@
 package services
 
 import (
+	"database/sql"
+	"errors"
 	"log"
 	"time"
 
@@ -46,20 +48,43 @@ func (ps *ProductService) DeleteProduct(id int) (bool, error) {
 type OrderService struct {
 	orderRepo   *repositories.OrderRepository
 	productRepo *repositories.ProductRepository // used to fetch product details for calculations
+	userRepo    *repositories.UserRepository
 }
 
-func NewOrderService(or *repositories.OrderRepository, pr *repositories.ProductRepository) *OrderService {
-	return &OrderService{orderRepo: or, productRepo: pr}
+var (
+	ErrUserNotFound    = errors.New("user not found")
+	ErrProductNotFound = errors.New("product not found")
+	ErrInvalidOrder    = errors.New("invalid order")
+)
+
+func NewOrderService(or *repositories.OrderRepository, pr *repositories.ProductRepository, ur *repositories.UserRepository) *OrderService {
+	return &OrderService{orderRepo: or, productRepo: pr, userRepo: ur}
 }
 
 // PlaceOrder processes a new order request: calculates totals and saves the order.
 func (os *OrderService) PlaceOrder(userID int, items []models.OrderItem) (int, error) {
+	if userID <= 0 || len(items) == 0 {
+		return 0, ErrInvalidOrder
+	}
+	exists, err := os.userRepo.UserExists(userID)
+	if err != nil {
+		return 0, err
+	}
+	if !exists {
+		return 0, ErrUserNotFound
+	}
 	// Calculate the total price and populate item prices using product data.
 	var total float64
 	for i := range items {
+		if items[i].ProductID <= 0 || items[i].Quantity <= 0 {
+			return 0, ErrInvalidOrder
+		}
 		// Look up each product's current price
 		product, err := os.productRepo.GetProductByID(items[i].ProductID)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return 0, ErrProductNotFound
+			}
 			return 0, err // if product not found or DB error
 		}
 		items[i].UnitPrice = product.Price

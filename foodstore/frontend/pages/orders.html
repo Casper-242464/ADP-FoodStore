@@ -52,12 +52,12 @@
 
       <div class="grid">
         <div>
-          <label class="hint">User ID</label>
+          <label class="hint">User ID (must exist in DB)</label>
           <input id="userId" placeholder="e.g. 1" />
         </div>
         <div>
-          <label class="hint">Items (format: productId:qty, productId:qty)</label>
-          <input id="items" placeholder="e.g. 2:1, 5:3" />
+          <label class="hint">Items (format: productId:qty, productId)</label>
+          <input id="items" placeholder="e.g. 2:1, 5, 7:3" />
         </div>
       </div>
 
@@ -75,20 +75,59 @@
 
   <script>
     function parseItems(s){
-      return (s || "")
-        .split(",")
+      const raw = (s || "")
+        .split(/[,\s;]+/)
         .map(x => x.trim())
-        .filter(Boolean)
-        .map(pair => {
-          const [pid, qty] = pair.split(":").map(v => v.trim());
-          return { product_id: Number(pid), quantity: Number(qty) };
-        })
-        .filter(i => Number.isFinite(i.product_id) && Number.isFinite(i.quantity) && i.quantity > 0);
+        .filter(Boolean);
+
+      const items = [];
+      const bad = [];
+
+      for (const token of raw) {
+        if (token.includes(":")) {
+          const parts = token.split(":").map(v => v.trim());
+          if (parts.length !== 2) {
+            bad.push(token);
+            continue;
+          }
+          const product_id = Number(parts[0]);
+          const quantity = Number(parts[1]);
+          if (!Number.isFinite(product_id) || !Number.isFinite(quantity) || quantity <= 0) {
+            bad.push(token);
+            continue;
+          }
+          items.push({ product_id, quantity });
+          continue;
+        }
+        const product_id = Number(token);
+        if (!Number.isFinite(product_id) || product_id <= 0) {
+          bad.push(token);
+          continue;
+        }
+        items.push({ product_id, quantity: 1 });
+      }
+
+      if (items.length === 0) {
+        return { items: [], error: "No valid items found" };
+      }
+      if (bad.length) {
+        return { items: [], error: "Invalid items: " + bad.join(", ") };
+      }
+      return { items, error: "" };
     }
 
     async function placeOrder(){
       const user_id = Number(document.getElementById("userId").value);
-      const items = parseItems(document.getElementById("items").value);
+      const parsed = parseItems(document.getElementById("items").value);
+      if (!Number.isFinite(user_id) || user_id <= 0) {
+        document.getElementById("out").textContent = JSON.stringify({ error: "User ID must be a positive number" });
+        return;
+      }
+      if (parsed.error) {
+        document.getElementById("out").textContent = JSON.stringify({ error: parsed.error });
+        return;
+      }
+      const items = parsed.items;
 
       const payload = { user_id, items };
 

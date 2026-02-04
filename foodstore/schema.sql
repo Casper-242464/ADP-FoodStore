@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users(id),
   total_price NUMERIC(12,2) NOT NULL,
   status TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,
-  order_id INTEGER NOT NULL,
-  product_id INTEGER NOT NULL,
+  order_id INTEGER NOT NULL REFERENCES orders(id),
+  product_id INTEGER NOT NULL REFERENCES products(id),
   quantity INTEGER NOT NULL,
   unit_price NUMERIC(12,2) NOT NULL,
   line_total NUMERIC(12,2) NOT NULL

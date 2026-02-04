@@ -158,3 +158,22 @@ func (cr *ContactRepository) SaveMessage(msg models.ContactMessage) error {
 	)
 	return err
 }
+
+// UserRepository handles data operations for users.
+type UserRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
+}
+
+// UserExists checks whether a user with the given ID exists.
+func (ur *UserRepository) UserExists(id int) (bool, error) {
+	var exists bool
+	err := ur.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}

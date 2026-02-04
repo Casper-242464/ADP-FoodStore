@@ -5,6 +5,11 @@
 psql -U postgres -d foodstore -f "/Users/bekasyljaksylyk/работа/advanced programming1/assignment3/foodstore/schema.sql"
 ```
 
+## 1.1) Seed a user (required for orders)
+```
+psql -U postgres -d foodstore -c "INSERT INTO users (name,email,password_hash) VALUES ('Demo User','demo@example.com','x') RETURNING id;"
+```
+
 ## 2) Run backend
 ```
 DB_USER=postgres DB_PASSWORD=123456789 DB_NAME=foodstore DB_SSLMODE=disable go run .

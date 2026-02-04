@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	// "fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -193,6 +194,12 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	// Call the service to place the order.
 	orderID, err := oh.service.PlaceOrder(reqBody.UserID, items)
 	if err != nil {
+		if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrProductNotFound) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

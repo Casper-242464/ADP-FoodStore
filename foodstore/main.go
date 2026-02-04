@@ -23,10 +23,11 @@ func main() {
 	productRepo := repositories.NewProductRepository(db) // example
 	orderRepo := repositories.NewOrderRepository(db)     // example
 	contactRepo := repositories.NewContactRepository(db) // example
+	userRepo := repositories.NewUserRepository(db)       // example
 
 	// --- Services ---
 	productService := services.NewProductService(productRepo)
-	orderService := services.NewOrderService(orderRepo, productRepo)
+	orderService := services.NewOrderService(orderRepo, productRepo, userRepo)
 	contactService := services.NewContactService(contactRepo)
 
 	// --- Handlers (your existing layered handlers) ---
@@ -36,9 +37,9 @@ func main() {
 
 	// ---------- API ----------
 	http.HandleFunc("/health", handlers.HealthHandler)
-	http.HandleFunc("/products", ph.ListProducts)   // JSON
-	http.HandleFunc("/orders", oh.PlaceOrder)       // JSON
-	http.HandleFunc("/contact", ch.HandleContact)   // GET HTML + POST form/JSON
+	http.HandleFunc("/products", ph.ListProducts) // JSON
+	http.HandleFunc("/orders", oh.PlaceOrder)     // JSON
+	http.HandleFunc("/contact", ch.HandleContact) // GET HTML + POST form/JSON
 
 	// ---------- UI ----------
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
