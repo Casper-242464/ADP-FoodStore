@@ -2,25 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Food Store - Contact</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Contacts</title>
+  <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
-  <h1>Contact Us</h1>
-  <form action="/contact" method="POST">
-    <p>
-      <label>Name:<br/>
-      <input type="text" name="name" required></label>
-    </p>
-    <p>
-      <label>Email:<br/>
-      <input type="email" name="email" required></label>
-    </p>
-    <p>
-      <label>Message:<br/>
-      <textarea name="message" required></textarea></label>
-    </p>
-    <button type="submit">Send Message</button>
-  </form>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Food Store</div>
+        </div>
+        <div class="nav-links">
+          <a href="./home.html">Home</a>
+          <a href="./products.html">Products</a>
+          <a href="./cart.html">Cart</a>
+          <a href="./orders.html">Orders</a>
+          <a href="./contacts.html">Contacts</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-pad">
+    <div class="card">
+      <h2 style="margin:0;">Contact Us</h2>
+      <p class="hint" style="margin:6px 0 16px 0;">
+        Simple form for demo (later will be handled by Go).
+      </p>
+
+      <form action="/contact" method="POST">
+        <div class="grid">
+          <div class="field">
+            <label class="hint">Name</label>
+            <input type="text" name="name" required placeholder="Your name">
+          </div>
+
+          <div class="field">
+            <label class="hint">Email</label>
+            <input type="email" name="email" required placeholder="example@mail.com">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label class="hint">Message</label>
+          <textarea name="message" required placeholder="Write your message..."></textarea>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn primary" type="submit">Send Message</button>
+          <a class="btn" href="./home.html">Back to Home</a>
+        </div>
+      </form>
+    </div>
+  </main>
 </body>
 </html>

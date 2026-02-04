@@ -2,15 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Food Store - Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Home</title>
+  <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
-  <h1>Food Store</h1>
-  <p>Welcome to the Food Store! Browse our products and place orders online.</p>
-  <h2>Products</h2>
-  <p>Product listing will appear here (to be implemented).</p>
-  <h2>Contact</h2>
-  <p>Have questions or feedback? <a href="/contact">Contact us</a>.</p>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Food Store</div>
+        </div>
+        <div class="nav-links">
+          <a href="./home.html">Home</a>
+          <a href="./products.html">Products</a>
+          <a href="./cart.html">Cart</a>
+          <a href="./orders.html">Orders</a>
+          <a href="./contacts.html">Contacts</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-pad">
+    <div class="hero-card">
+      <div class="pad">
+        <h1 style="margin:0 0 10px 0;">Food Store</h1>
+        <p class="hint" style="margin:0 0 14px 0;">
+          Welcome! Browse products and place orders.
+        </p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn primary" href="./products.html">Open Products</a>
+          <a class="btn" href="./orders.html">Place Order</a>
+          <a class="btn" href="./contacts.html">Contacts</a>
+        </div>
+      </div>
+    </div>
+  </main>
 </body>
 </html>
