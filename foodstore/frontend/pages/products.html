@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Products</title>
+  <style>
+    /* reuse same style tokens vibe as index.html */
+    :root{
+      --bg0:#f6f8ff; --bg1:#f8fbff; --card:rgba(255,255,255,.78);
+      --stroke:rgba(20,30,55,.10); --text:#0f172a; --muted:rgba(15,23,42,.68);
+      --primary:#2563eb; --primary2:#7c3aed; --accent:#14b8a6;
+      --shadow: 0 18px 45px rgba(17,24,39,.10);
+      --shadow2: 0 10px 25px rgba(17,24,39,.08);
+      --radius: 22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 500px at 18% 10%, rgba(37,99,235,.20), transparent 60%),
+        radial-gradient(900px 480px at 78% 18%, rgba(124,58,237,.20), transparent 60%),
+        radial-gradient(900px 520px at 55% 90%, rgba(20,184,166,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+    }
+    a{color:inherit; text-decoration:none}
+    .container{width:min(1140px, 92vw); margin:0 auto}
+    .nav{position:sticky; top:0; z-index:10; backdrop-filter: blur(16px);
+      background: rgba(246,248,255,.72); border-bottom:1px solid var(--stroke);}
+    .nav-inner{display:flex; align-items:center; justify-content:space-between; padding:16px 0;}
+    .brand{font-weight:900}
+    .nav-links{display:flex; gap:14px; color:var(--muted); font-weight:700;}
+    .nav-links a{padding:10px 12px; border-radius:999px}
+    .nav-links a:hover{background: rgba(37,99,235,.08); color: rgba(15,23,42,.92);}
+    .card{border:1px solid var(--stroke); background: var(--card); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding:18px;}
+    .btn{display:inline-flex; align-items:center; justify-content:center; border-radius:999px;
+      padding:11px 16px; font-weight:900; border:1px solid var(--stroke); background: rgba(255,255,255,.70);
+      box-shadow: var(--shadow2); cursor:pointer;}
+    .btn.primary{border:none; color:#fff; background: linear-gradient(135deg, var(--primary), var(--primary2));}
+    table{width:100%; border-collapse:separate; border-spacing:0 10px; margin-top:12px;}
+    th{color:var(--muted); font-size:12px; text-align:left; padding:0 12px;}
+    td{background: rgba(255,255,255,.75); border:1px solid var(--stroke); padding:12px; font-weight:700;}
+    tr td:first-child{border-radius:14px 0 0 14px}
+    tr td:last-child{border-radius:0 14px 14px 0}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
+    .hint{color:var(--muted); font-weight:700; font-size:13px}
+    input{padding:10px 12px; border-radius:12px; border:1px solid var(--stroke); background: rgba(255,255,255,.8); font-weight:700;}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">Food Store</div>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/ui/products">Products</a>
+          <a href="/ui/cart">Cart</a>
+          <a href="/ui/orders">Orders</a>
+          <a href="/contact">Contacts</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container" style="padding:26px 0 40px;">
+    <div class="card">
+      <div class="row">
+        <div>
+          <h2 style="margin:0; letter-spacing:-.2px;">Products Catalog</h2>
+          <p class="hint" style="margin:6px 0 0 0;">Loaded from <b>GET /products</b> (JSON)</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="q" placeholder="Search (client-side)..." />
+          <button class="btn primary" onclick="loadProducts()">Refresh</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:90px;">ID</th>
+            <th>Name</th>
+            <th style="width:140px;">Price</th>
+            <th style="width:140px;">Add</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    let all = [];
+
+    async function loadProducts(){
+      const res = await fetch("/products");
+      const data = await res.json();
+      all = Array.isArray(data) ? data : [];
+      render();
+    }
+
+    function render(){
+      const q = (document.getElementById("q").value || "").toLowerCase().trim();
+      const list = q ? all.filter(p => (p.name || "").toLowerCase().includes(q)) : all;
+
+      const rows = document.getElementById("rows");
+      rows.innerHTML = list.map(p => `
+        <tr>
+          <td>${p.id ?? "-"}</td>
+          <td>${escapeHtml(p.name ?? "Unnamed")}</td>
+          <td>${p.price ?? "-"}</td>
+          <td><button class="btn" onclick="addToCart(${p.id ?? 0})">Add</button></td>
+        </tr>
+      `).join("") || `<tr><td colspan="4" class="hint" style="padding:14px;">No products yet. Add seed data in DB or in-memory.</td></tr>`;
+    }
+
+    function addToCart(id){
+      alert("Cart is planned. ProductID = " + id);
+    }
+
+    function escapeHtml(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    document.getElementById("q").addEventListener("input", render);
+    loadProducts();
+  </script>
+</body>
+</html>

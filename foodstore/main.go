@@ -1,61 +1,57 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
-	"foodstore/config"
+	_ "github.com/lib/pq"
 	"foodstore/internal/handlers"
 	"foodstore/internal/repositories"
 	"foodstore/internal/services"
 )
 
 func main() {
-	// Load configuration (from env variables or defaults)
-	cfg := config.GetConfig()
-
-	// Connect to the PostgreSQL database
-	db, err := config.ConnectDB(cfg)
+	// --- Database ---
+	dsn := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"))
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// Initialize repositories with the DB connection
-	productRepo := repositories.NewProductRepository(db)
-	orderRepo := repositories.NewOrderRepository(db)
-	contactRepo := repositories.NewContactRepository(db)
+	// --- Repos ---
+	productRepo := repositories.NewProductRepository(db) // example
+	orderRepo := repositories.NewOrderRepository(db)     // example
+	contactRepo := repositories.NewContactRepository(db) // example
 
-	// Initialize services with repositories
+	// --- Services ---
 	productService := services.NewProductService(productRepo)
 	orderService := services.NewOrderService(orderRepo, productRepo)
 	contactService := services.NewContactService(contactRepo)
 
-	// Initialize handlers with services
-	productHandler := handlers.NewProductHandler(productService)
-	orderHandler := handlers.NewOrderHandler(orderService)
-	contactHandler := handlers.NewContactHandler(contactService)
+	// --- Handlers (your existing layered handlers) ---
+	ph := handlers.NewProductHandler(productService)
+	oh := handlers.NewOrderHandler(orderService)
+	ch := handlers.NewContactHandler(contactService)
 
-	// Set up HTTP routes and handlers
+	// ---------- API ----------
 	http.HandleFunc("/health", handlers.HealthHandler)
-	http.HandleFunc("/products", productHandler.ListProducts)   // GET
-	http.HandleFunc("/orders", orderHandler.PlaceOrder)        // POST
-	http.HandleFunc("/contact", contactHandler.HandleContact)  // GET and POST
+	http.HandleFunc("/products", ph.ListProducts)   // JSON
+	http.HandleFunc("/orders", oh.PlaceOrder)       // JSON
+	http.HandleFunc("/contact", ch.HandleContact)   // GET HTML + POST form/JSON
 
-	// Serve the homepage at "/" (if any other static file requested under root, return 404)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		http.ServeFile(w, r, "frontend/pages/home.html")
-	})
+	// ---------- UI ----------
+	http.HandleFunc("/ui/products", handlers.ProductsPage)
+	http.HandleFunc("/ui/orders", handlers.OrdersPage)
+	http.HandleFunc("/ui/cart", handlers.CartPage)
+	http.HandleFunc("/", handlers.HomePage) // keep last (catch-all for only "/")
 
-	// Start the HTTP server
-	addr := cfg.ServerAddress  // typically ":8080"
-	fmt.Printf("Starting server on %s...\n", addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatalf("Server failed: %v", err)
-	}
+	log.Println("Server running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
