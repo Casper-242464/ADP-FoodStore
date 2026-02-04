@@ -2,10 +2,7 @@ package handlers
 
 import "net/http"
 
-// Only UI pages (HTML). No business logic here.
-
 func HomePage(w http.ResponseWriter, r *http.Request) {
-	// serve your mockup main page
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
