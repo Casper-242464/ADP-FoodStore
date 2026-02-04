@@ -14,6 +14,7 @@ type Config struct {
 	DBUser        string
 	DBPassword    string
 	DBName        string
+	DBSSLMode     string
 	ServerAddress string
 }
 
@@ -25,6 +26,7 @@ func GetConfig() *Config {
 		DBUser:        getEnv("DB_USER", "postgres"),
 		DBPassword:    getEnv("DB_PASSWORD", "123456789"),
 		DBName:        getEnv("DB_NAME", "foodstore"),
+		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
 		ServerAddress: getEnv("SERVER_ADDR", ":8080"),  // HTTP listen address
 	}
 }
@@ -32,8 +34,8 @@ func GetConfig() *Config {
 // ConnectDB opens a connection to the Postgres database using settings from Config.
 func ConnectDB(cfg *Config) (*sql.DB, error) {
 	// Construct DSN (Data Source Name) for PostgreSQL
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err

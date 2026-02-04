@@ -78,6 +78,24 @@
         </div>
       </div>
 
+      <div class="card" style="margin-top:14px;">
+        <div class="row">
+          <div>
+            <h3 style="margin:0;">Create Product</h3>
+            <p class="hint" style="margin:6px 0 0 0;">Sends <b>POST /products</b></p>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <input id="p_name" placeholder="Name" />
+          <input id="p_desc" placeholder="Description" />
+          <input id="p_price" placeholder="Price" />
+          <input id="p_stock" placeholder="Stock" />
+          <input id="p_cat" placeholder="Category" />
+          <button class="btn primary" onclick="createProduct()">Add</button>
+        </div>
+        <div class="hint" id="createOut" style="margin-top:8px;"></div>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -100,6 +118,25 @@
       const data = await res.json();
       all = Array.isArray(data) ? data : [];
       render();
+    }
+
+    async function createProduct(){
+      const payload = {
+        name: document.getElementById("p_name").value.trim(),
+        description: document.getElementById("p_desc").value.trim(),
+        price: Number(document.getElementById("p_price").value),
+        stock: Number(document.getElementById("p_stock").value),
+        category: document.getElementById("p_cat").value.trim()
+      };
+
+      const res = await fetch("/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      document.getElementById("createOut").textContent = text;
+      loadProducts();
     }
 
     function render(){

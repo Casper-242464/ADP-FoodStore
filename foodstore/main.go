@@ -1,13 +1,10 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	_ "github.com/lib/pq"
+	"foodstore/config"
 	"foodstore/internal/handlers"
 	"foodstore/internal/repositories"
 	"foodstore/internal/services"
@@ -15,11 +12,8 @@ import (
 
 func main() {
 	// --- Database ---
-	dsn := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"))
-	db, err := sql.Open("postgres", dsn)
+	cfg := config.GetConfig()
+	db, err := config.ConnectDB(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,5 +47,5 @@ func main() {
 	http.HandleFunc("/", handlers.HomePage) // keep last (catch-all for only "/")
 
 	log.Println("Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(cfg.ServerAddress, nil))
 }
