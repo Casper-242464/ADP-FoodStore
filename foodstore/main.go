@@ -36,6 +36,8 @@ func main() {
 	http.HandleFunc("/orders", oh.PlaceOrder)
 	http.HandleFunc("/contact", ch.HandleContact)
 
+	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
+
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
 	http.HandleFunc("/ui/orders", handlers.OrdersPage)
 	http.HandleFunc("/ui/cart", handlers.CartPage)

@@ -15,11 +15,11 @@
           <div>Food Store</div>
         </div>
         <div class="nav-links">
-          <a href="./home.html">Home</a>
-          <a href="./products.html">Products</a>
-          <a href="./cart.html">Cart</a>
-          <a href="./orders.html">Orders</a>
-          <a href="./contact.html">Contacts</a>
+          <a href="/">Home</a>
+          <a href="/ui/products">Products</a>
+          <a href="/ui/cart">Cart</a>
+          <a href="/ui/orders">Orders</a>
+          <a href="/contact">Contacts</a>
         </div>
       </div>
     </div>
@@ -72,4 +72,59 @@
     </div>
   </main>
 </body>
+<script>
+    let all = [];
+
+    async function loadProducts(){
+      const res = await fetch("/products");
+      const data = await res.json();
+      all = Array.isArray(data) ? data : [];
+      render();
+    }
+
+    async function createProduct(){
+      const payload = {
+        name: document.getElementById("p_name").value.trim(),
+        description: document.getElementById("p_desc").value.trim(),
+        price: Number(document.getElementById("p_price").value),
+        stock: Number(document.getElementById("p_stock").value),
+        category: document.getElementById("p_cat").value.trim()
+      };
+
+      const res = await fetch("/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      document.getElementById("createOut").textContent = text;
+      loadProducts();
+    }
+
+    function render(){
+      const q = (document.getElementById("q").value || "").toLowerCase().trim();
+      const list = q ? all.filter(p => (p.name || "").toLowerCase().includes(q)) : all;
+
+      const rows = document.getElementById("rows");
+      rows.innerHTML = list.map(p => `
+        <tr>
+          <td>${p.id ?? "-"}</td>
+          <td>${escapeHtml(p.name ?? "Unnamed")}</td>
+          <td>${p.price ?? "-"}</td>
+          <td><button class="btn" onclick="addToCart(${p.id ?? 0})">Add</button></td>
+        </tr>
+      `).join("") || `<tr><td colspan="4" class="hint" style="padding:14px;">No products yet. Add seed data in DB or in-memory.</td></tr>`;
+    }
+
+    function addToCart(id){
+      alert("Cart is planned. ProductID = " + id);
+    }
+
+    function escapeHtml(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    document.getElementById("q").addEventListener("input", render);
+    loadProducts();
+  </script>
 </html>
