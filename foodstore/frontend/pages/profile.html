@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Profile</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Food Store</div>
+        </div>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/ui/products">Products</a>
+          <a href="/contact">Contacts</a>
+        </div>
+        <div class="auth-buttons" id="authButtons">
+          <span id="userName" style="font-weight: 700; padding: 0 12px;"></span>
+          <button class="btn" onclick="logout()" style="cursor: pointer;">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-pad">
+    <div class="hero-card">
+      <div class="pad">
+        <h1 style="margin:0 0 10px 0;">Your Profile</h1>
+        <p class="hint" style="margin:0 0 24px 0;">
+          Manage your account information.
+        </p>
+
+        <div style="max-width: 500px;">
+          <div style="border: 1px solid var(--stroke); border-radius: 16px; padding: 20px; background: rgba(255,255,255,.5);">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <label style="display: block; font-weight: 700; margin-bottom: 4px; color: var(--muted); font-size: 13px;">Name</label>
+                <p id="profileName" style="margin: 0; font-size: 16px; font-weight: 700;"></p>
+              </div>
+
+              <div>
+                <label style="display: block; font-weight: 700; margin-bottom: 4px; color: var(--muted); font-size: 13px;">Email</label>
+                <p id="profileEmail" style="margin: 0; font-size: 16px; font-weight: 700;"></p>
+              </div>
+
+              <div>
+                <label style="display: block; font-weight: 700; margin-bottom: 4px; color: var(--muted); font-size: 13px;">Role</label>
+                <p id="profileRole" style="margin: 0; font-size: 16px; font-weight: 700; color: var(--primary);">Buyer</p>
+              </div>
+
+              <div>
+                <label style="display: block; font-weight: 700; margin-bottom: 4px; color: var(--muted); font-size: 13px;">Member Since</label>
+                <p id="profileDated" style="margin: 0; font-size: 16px; font-weight: 700;"></p>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                <a class="btn primary" href="/ui/products">Continue Shopping</a>
+                <a class="btn" href="/ui/orders">My Orders</a>
+                <button class="btn" onclick="logout()" style="cursor: pointer;">Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Check if user is logged in
+    const userToken = localStorage.getItem('userToken');
+    if (!userToken) {
+      window.location.href = '/ui/login';
+    }
+
+    const userName = localStorage.getItem('userName') || 'User';
+    const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+    const userRole = localStorage.getItem('userRole') || 'buyer';
+    const userDate = localStorage.getItem('userDate') || new Date().toLocaleDateString();
+
+    document.getElementById('profileName').textContent = userName;
+    document.getElementById('profileEmail').textContent = userEmail;
+    document.getElementById('profileRole').textContent = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+    document.getElementById('profileDated').textContent = userDate;
+    document.getElementById('userName').textContent = userName;
+
+    function logout() {
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userDate');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

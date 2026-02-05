@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Login</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Food Store</div>
+        </div>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/ui/products">Products</a>
+          <a href="/contact">Contacts</a>
+        </div>
+        <div class="auth-buttons" id="authButtons">
+          <a class="btn" href="/ui/login">Login</a>
+          <a class="btn primary" href="/ui/register">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-pad">
+    <div class="hero-card">
+      <div class="pad">
+        <h1 style="margin:0 0 10px 0;">Login</h1>
+        <p class="hint" style="margin:0 0 24px 0;">
+          Sign in to your account to continue shopping.
+        </p>
+
+        <form id="loginForm" style="display: flex; flex-direction: column; gap: 14px; max-width: 400px;">
+          <div>
+            <label for="email" style="display: block; margin-bottom: 6px; font-weight: 700;">Email</label>
+            <input type="email" id="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label for="password" style="display: block; margin-bottom: 6px; font-weight: 700;">Password</label>
+            <input type="password" id="password" name="password" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+          
+          <p style="text-align: center; margin: 10px 0 0 0; color: var(--muted); font-size: 14px;">
+            Don't have an account? <a href="/ui/register" style="color: var(--primary); font-weight: 700;">Register here</a>
+          </p>
+        </form>
+
+        <div id="message" style="margin-top: 18px; padding: 12px; border-radius: 8px; display: none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Check if already logged in
+    if (localStorage.getItem('userToken')) {
+      window.location.href = '/ui/profile';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('message');
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+          messageDiv.style.color = 'var(--text)';
+          messageDiv.textContent = data.error || 'Login failed';
+          return;
+        }
+        
+        // Store user info in localStorage
+        localStorage.setItem('userToken', 'token-' + Date.now());
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userDate', new Date().toLocaleDateString());
+        
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(20, 184, 166, 0.1)';
+        messageDiv.style.color = 'var(--text)';
+        messageDiv.textContent = 'Login successful! Redirecting...';
+        
+        setTimeout(() => {
+          window.location.href = '/ui/profile';
+        }, 1000);
+      } catch (error) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        messageDiv.style.color = 'var(--text)';
+        messageDiv.textContent = 'Login failed. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html>

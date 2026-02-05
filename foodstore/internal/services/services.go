@@ -115,3 +115,60 @@ func (cs *ContactService) SendMessage(name, email, message string) error {
 	}(msg)
 	return nil
 }
+
+type UserService struct {
+	userRepo *repositories.UserRepository
+}
+
+func NewUserService(ur *repositories.UserRepository) *UserService {
+	return &UserService{userRepo: ur}
+}
+
+var (
+	ErrUserAlreadyExists  = errors.New("user with this email already exists")
+	ErrInvalidCredentials = errors.New("invalid email or password")
+)
+
+func (us *UserService) Register(name, email, password string) (int, error) {
+	if name == "" || email == "" || password == "" {
+		return 0, errors.New("name, email, and password are required")
+	}
+
+	exists, err := us.userRepo.UserExistsByEmail(email)
+	if err != nil {
+		return 0, err
+	}
+	if exists {
+		return 0, ErrUserAlreadyExists
+	}
+
+	user := models.User{
+		Name:         name,
+		Email:        email,
+		PasswordHash: password, // In production, use bcrypt
+		Role:         "buyer",
+	}
+	return us.userRepo.CreateUser(user)
+}
+
+func (us *UserService) Login(email, password string) (*models.User, error) {
+	if email == "" || password == "" {
+		return nil, errors.New("email and password are required")
+	}
+
+	user, err := us.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	// Simple password check (in production, use bcrypt.CompareHashAndPassword)
+	if user.PasswordHash != password {
+		return nil, ErrInvalidCredentials
+	}
+
+	return user, nil
+}
+
+func (us *UserService) GetUserByID(id int) (*models.User, error) {
+	return us.userRepo.GetUserByID(id)
+}

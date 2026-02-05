@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Food Store — Register</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>Food Store</div>
+        </div>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/ui/products">Products</a>
+          <a href="/contact">Contacts</a>
+        </div>
+        <div class="auth-buttons" id="authButtons">
+          <a class="btn" href="/ui/login">Login</a>
+          <a class="btn primary" href="/ui/register">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container main-pad">
+    <div class="hero-card">
+      <div class="pad">
+        <h1 style="margin:0 0 10px 0;">Create Account</h1>
+        <p class="hint" style="margin:0 0 24px 0;">
+          Join Food Store to get started shopping.
+        </p>
+
+        <form id="registerForm" style="display: flex; flex-direction: column; gap: 14px; max-width: 400px;">
+          <div>
+            <label for="name" style="display: block; margin-bottom: 6px; font-weight: 700;">Full Name</label>
+            <input type="text" id="name" name="name" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label for="email" style="display: block; margin-bottom: 6px; font-weight: 700;">Email</label>
+            <input type="email" id="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label for="password" style="display: block; margin-bottom: 6px; font-weight: 700;">Password</label>
+            <input type="password" id="password" name="password" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <div>
+            <label for="confirmPassword" style="display: block; margin-bottom: 6px; font-weight: 700;">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+          </div>
+
+          <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Create Account</button>
+          
+          <p style="text-align: center; margin: 10px 0 0 0; color: var(--muted); font-size: 14px;">
+            Already have an account? <a href="/ui/login" style="color: var(--primary); font-weight: 700;">Login here</a>
+          </p>
+        </form>
+
+        <div id="message" style="margin-top: 18px; padding: 12px; border-radius: 8px; display: none;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Check if already logged in
+    if (localStorage.getItem('userToken')) {
+      window.location.href = '/ui/profile';
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('message');
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (password !== confirmPassword) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        messageDiv.style.color = 'var(--text)';
+        messageDiv.textContent = 'Passwords do not match.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+          messageDiv.style.color = 'var(--text)';
+          messageDiv.textContent = data.error || 'Registration failed';
+          return;
+        }
+        
+        // Store user info in localStorage
+        localStorage.setItem('userToken', 'token-' + data.user_id);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userName', name);
+        localStorage.setItem('userRole', 'buyer');
+        localStorage.setItem('userDate', new Date().toLocaleDateString());
+        
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(20, 184, 166, 0.1)';
+        messageDiv.style.color = 'var(--text)';
+        messageDiv.textContent = 'Registration successful! Redirecting...';
+        
+        setTimeout(() => {
+          window.location.href = '/ui/profile';
+        }, 1000);
+      } catch (error) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        messageDiv.style.color = 'var(--text)';
+        messageDiv.textContent = 'Registration failed. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html>

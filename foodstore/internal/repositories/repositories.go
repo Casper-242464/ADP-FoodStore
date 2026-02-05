@@ -161,3 +161,48 @@ func (ur *UserRepository) UserExists(id int) (bool, error) {
 	}
 	return exists, nil
 }
+
+func (ur *UserRepository) UserExistsByEmail(email string) (bool, error) {
+	var exists bool
+	err := ur.db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (ur *UserRepository) CreateUser(user models.User) (int, error) {
+	var id int
+	err := ur.db.QueryRow(
+		"INSERT INTO users (name, email, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		user.Name, user.Email, user.PasswordHash, user.Role, time.Now(),
+	).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+func (ur *UserRepository) GetUserByEmail(email string) (*models.User, error) {
+	row := ur.db.QueryRow(
+		"SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = $1", email,
+	)
+	var u models.User
+	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (ur *UserRepository) GetUserByID(id int) (*models.User, error) {
+	row := ur.db.QueryRow(
+		"SELECT id, name, email, password_hash, role, created_at FROM users WHERE id = $1", id,
+	)
+	var u models.User
+	err := row.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}

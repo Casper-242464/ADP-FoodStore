@@ -21,3 +21,15 @@ func OrdersPage(w http.ResponseWriter, r *http.Request) {
 func CartPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "frontend/pages/cart.html")
 }
+
+func LoginPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/pages/login.html")
+}
+
+func RegisterPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/pages/register.html")
+}
+
+func ProfilePage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/pages/profile.html")
+}

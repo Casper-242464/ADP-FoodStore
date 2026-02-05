@@ -26,21 +26,32 @@ func main() {
 	productService := services.NewProductService(productRepo)
 	orderService := services.NewOrderService(orderRepo, productRepo, userRepo)
 	contactService := services.NewContactService(contactRepo)
+	userService := services.NewUserService(userRepo)
 
 	ph := handlers.NewProductHandler(productService)
 	oh := handlers.NewOrderHandler(orderService)
 	ch := handlers.NewContactHandler(contactService)
+	uh := handlers.NewUserHandler(userService)
 
 	http.HandleFunc("/health", handlers.HealthHandler)
 	http.HandleFunc("/products", ph.ListProducts)
 	http.HandleFunc("/orders", oh.PlaceOrder)
 	http.HandleFunc("/contact", ch.HandleContact)
 
+	// Auth API endpoints
+	http.HandleFunc("/api/register", uh.Register)
+	http.HandleFunc("/api/login", uh.Login)
+	http.HandleFunc("/api/profile", uh.GetProfile)
+
 	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
 
+	// UI Pages
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
 	http.HandleFunc("/ui/orders", handlers.OrdersPage)
 	http.HandleFunc("/ui/cart", handlers.CartPage)
+	http.HandleFunc("/ui/login", handlers.LoginPage)
+	http.HandleFunc("/ui/register", handlers.RegisterPage)
+	http.HandleFunc("/ui/profile", handlers.ProfilePage)
 	http.HandleFunc("/", handlers.HomePage)
 
 	log.Println("Server running on http://localhost:8080")
