@@ -69,7 +69,6 @@
   </main>
 
   <script>
-    // Check if already logged in
     if (localStorage.getItem('userToken')) {
       window.location.href = '/ui/profile';
     }
@@ -108,12 +107,14 @@
           return;
         }
         
-        // Store user info in localStorage
         localStorage.setItem('userToken', 'token-' + data.user_id);
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userName', name);
         localStorage.setItem('userRole', 'buyer');
         localStorage.setItem('userDate', new Date().toLocaleDateString());
+        if (data.user_id !== undefined && data.user_id !== null) {
+          localStorage.setItem('userId', String(data.user_id));
+        }
         
         messageDiv.style.display = 'block';
         messageDiv.style.background = 'rgba(20, 184, 166, 0.1)';

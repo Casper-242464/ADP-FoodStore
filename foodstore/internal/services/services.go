@@ -88,6 +88,20 @@ func (os *OrderService) PlaceOrder(userID int, items []models.OrderItem) (int, e
 	return orderID, nil
 }
 
+func (os *OrderService) ListOrdersByUserID(userID int) ([]models.Order, error) {
+	if userID <= 0 {
+		return nil, ErrInvalidOrder
+	}
+	exists, err := os.userRepo.UserExists(userID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, ErrUserNotFound
+	}
+	return os.orderRepo.ListOrdersByUserID(userID)
+}
+
 type ContactService struct {
 	contactRepo *repositories.ContactRepository
 }
@@ -145,7 +159,7 @@ func (us *UserService) Register(name, email, password string) (int, error) {
 	user := models.User{
 		Name:         name,
 		Email:        email,
-		PasswordHash: password, // In production, use bcrypt
+		PasswordHash: password, 
 		Role:         "buyer",
 	}
 	return us.userRepo.CreateUser(user)
@@ -161,7 +175,6 @@ func (us *UserService) Login(email, password string) (*models.User, error) {
 		return nil, ErrInvalidCredentials
 	}
 
-	// Simple password check (in production, use bcrypt.CompareHashAndPassword)
 	if user.PasswordHash != password {
 		return nil, ErrInvalidCredentials
 	}

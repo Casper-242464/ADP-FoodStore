@@ -128,6 +128,77 @@ func (or *OrderRepository) CreateOrder(userID int, items []models.OrderItem, tot
 	return orderID, nil
 }
 
+func (or *OrderRepository) ListOrdersByUserID(userID int) ([]models.Order, error) {
+	rows, err := or.db.Query(`
+		SELECT
+			o.id, o.user_id, o.total_price, o.status, o.created_at,
+			oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.line_total,
+			p.name
+		FROM orders o
+		LEFT JOIN order_items oi ON oi.order_id = o.id
+		LEFT JOIN products p ON p.id = oi.product_id
+		WHERE o.user_id = $1
+		ORDER BY o.created_at DESC, o.id DESC, oi.id ASC
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orderMap := make(map[int]*models.Order)
+	orderIDs := make([]int, 0)
+
+	for rows.Next() {
+		var o models.Order
+		var itemID sql.NullInt64
+		var productID sql.NullInt64
+		var quantity sql.NullInt64
+		var unitPrice sql.NullFloat64
+		var lineTotal sql.NullFloat64
+		var productName sql.NullString
+
+		if err := rows.Scan(
+			&o.ID, &o.UserID, &o.TotalPrice, &o.Status, &o.CreatedAt,
+			&itemID, &productID, &quantity, &unitPrice, &lineTotal,
+			&productName,
+		); err != nil {
+			return nil, err
+		}
+
+		existing, ok := orderMap[o.ID]
+		if !ok {
+			o.Items = []models.OrderItem{}
+			orderMap[o.ID] = &o
+			orderIDs = append(orderIDs, o.ID)
+			existing = &o
+		}
+
+		if itemID.Valid {
+			item := models.OrderItem{
+				ID:          int(itemID.Int64),
+				OrderID:     o.ID,
+				ProductID:   int(productID.Int64),
+				Quantity:    int(quantity.Int64),
+				UnitPrice:   unitPrice.Float64,
+				LineTotal:   lineTotal.Float64,
+				ProductName: productName.String,
+			}
+			existing.Items = append(existing.Items, item)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	orders := make([]models.Order, 0, len(orderIDs))
+	for _, id := range orderIDs {
+		if o := orderMap[id]; o != nil {
+			orders = append(orders, *o)
+		}
+	}
+	return orders, nil
+}
+
 type ContactRepository struct {
 	db *sql.DB
 }

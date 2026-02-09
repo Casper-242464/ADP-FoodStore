@@ -27,6 +27,7 @@ type Order struct {
 	TotalPrice float64   `json:"total_price"`
 	Status     string    `json:"status"`
 	CreatedAt  time.Time `json:"created_at"`
+	Items      []OrderItem `json:"items,omitempty"`
 }
 
 type OrderItem struct {
@@ -36,6 +37,7 @@ type OrderItem struct {
 	Quantity  int     `json:"quantity"`
 	UnitPrice float64 `json:"unit_price"`
 	LineTotal float64 `json:"line_total"`
+	ProductName string `json:"name"`
 }
 
 type ContactMessage struct {

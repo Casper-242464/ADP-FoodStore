@@ -291,3 +291,37 @@ pre{
   padding:12px;
   overflow:auto;
 }
+
+.qty-control{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.qty-control input{
+  width:70px;
+  text-align:center;
+}
+
+.qty-btn{
+  width:30px;
+  height:30px;
+  border-radius:8px;
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,.75);
+  font-weight:900;
+  cursor:pointer;
+}
+
+.qty-btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.cart-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}

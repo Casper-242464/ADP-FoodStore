@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food Store — Main Page</title>
+  <title>Food Store</title>
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
 <body>
@@ -14,14 +14,17 @@
         <div class="brand">
           <div class="logo" aria-hidden="true"></div>
           <div>
-            <div style="font-size:14px; font-weight:950; line-height:1;">Food Store</div>
-            <div style="font-size:12px; color:var(--muted); font-weight:900;">Go Monolith Project</div>
+            <div style="font-weight:900; line-height:1;">Food Store</div>
+            <div style="font-size:12px; color:var(--muted); font-weight:700;">
+              Simple Go Web App
+            </div>
           </div>
         </div>
 
         <div class="nav-links">
           <a href="/">Home</a>
           <a href="/ui/products">Products</a>
+          <a href="/ui/cart">Cart</a>
           <a href="/ui/orders">Orders</a>
           <a href="/contact">Contacts</a>
         </div>
@@ -29,141 +32,110 @@
         <div style="display:flex; gap:10px; align-items:center;">
           <a class="btn" href="/ui/login" id="loginBtn">Login</a>
           <a class="btn primary" href="/ui/register" id="registerBtn">Register</a>
-          <span id="userName" style="font-weight: 700; padding: 0 12px; display: none;"></span>
-          <button class="btn" onclick="logout()" id="logoutBtn" style="cursor: pointer; display: none;">Logout</button>
-          <a class="btn" href="/ui/profile" id="profileBtn" style="display: none;">Profile</a>
-          <div class="chip">AP1 • 2026</div>
-          <a class="btn primary" href="/ui/products">Browse Products</a>
+
+          <span id="userName" style="display:none; font-weight:800; padding:0 10px;"></span>
+          <a class="btn" href="/ui/profile" id="profileBtn" style="display:none;">Profile</a>
+          <button class="btn" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
         </div>
       </div>
     </div>
   </div>
 
-  <main class="container">
+  <main class="container" style="padding-top:32px;">
+
     <section class="hero">
-      <div class="hero-grid">
-        <div class="hero-card">
-          <div class="pad">
-            <h1 class="hero-title">
-              Fresh groceries.<br/>
-              <span class="gradient-text">Clean design.</span><br/>
-              Built with Go.
-            </h1>
-            <p class="hero-sub">
-              Food Store is a monolithic Go project for Advanced Programming 1.
-              The focus is architecture, modular structure, and a clear user experience —
-              without overcomplicating workflows.
-            </p>
-
-            <div class="hero-actions">
-              <a class="btn primary" href="/ui/products">Open Products</a>
-              <a class="btn" href="/ui/orders">Place Order</a>
-              <a class="btn" href="/contact">Contacts</a>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="glass">
-            <div class="badge"><span class="spark"></span> Milestone Demo Ready</div>
-            <div class="panel-title">What this page demonstrates</div>
-            <p class="panel-text">
-              A clean, premium-looking UI for screenshots and defense.
-              Connected to backend endpoints via simple buttons & forms.
-            </p>
+      <div class="hero-card">
+        <div class="pad">
+          <div class="badge" style="margin-bottom:12px;">
+            Minimal UI • Go Backend • PostgreSQL
           </div>
 
-          <div class="glass">
-            <div class="panel-title">System Highlights</div>
-            <p class="panel-text" style="margin-bottom:10px;">
-              Handlers → Services → Repositories → Database (PostgreSQL).
-            </p>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <a class="btn" href="/ui/products">Products UI</a>
-              <a class="btn" href="/ui/orders">Orders UI</a>
-              <a class="btn" href="/contact">Contacts UI</a>
-            </div>
+          <h1 class="hero-title">
+            Clean.<br/>
+            Simple.<br/>
+            <span class="gradient-text">Food Store</span>
+          </h1>
+
+          <p class="hero-sub">
+            Browse products, add them to cart, and place orders using a clean Go monolith.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="/ui/products">Open Products</a>
+            <a class="btn" href="/ui/cart">Open Cart</a>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head">
-        <div>
-          <h2 class="h2">Core Modules</h2>
-          <p class="hint">Catalog • Orders • Contacts. Clean MVP for milestone demo.</p>
-        </div>
-        <a class="btn" href="/ui/products">View Catalog</a>
-      </div>
-
+    <section class="section" style="margin-top:30px;">
       <div class="grid-3">
         <div class="card">
           <div class="icon">P</div>
           <h3>Products</h3>
-          <p>Browse catalog, add items, simple product creation form (demo).</p>
+          <p>View catalog loaded from backend API.</p>
         </div>
+
+        <div class="card">
+          <div class="icon">C</div>
+          <h3>Cart</h3>
+          <p>Add products and manage your cart.</p>
+        </div>
+
         <div class="card">
           <div class="icon">O</div>
           <h3>Orders</h3>
-          <p>Add items to cart and place an order with one clean button.</p>
-        </div>
-        <div class="card">
-          <div class="icon">C</div>
-          <h3>Contacts</h3>
-          <p>Send a message using a simple form. Works with GET/POST.</p>
+          <p>Create orders based on your cart.</p>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" style="margin-top:24px;">
       <div class="contact-strip">
         <div>
-          <div style="font-weight:950;">Need help or have a question?</div>
-          <div style="color:var(--muted); font-weight:800; font-size:13px; margin-top:4px;">
-            Open Contacts and send a message to the store team.
+          <div style="font-weight:900;">Ready to try?</div>
+          <div style="font-size:13px; color:var(--muted); font-weight:700; margin-top:4px;">
+            Start by browsing products in the catalog.
           </div>
         </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <a class="btn primary" href="/contact">Contacts</a>
-          <a class="btn" href="/ui/orders">Place Order</a>
+        <div style="display:flex; gap:10px;">
+          <a class="btn primary" href="/ui/products">Browse Products</a>
+          <a class="btn" href="/contact">Contacts</a>
         </div>
       </div>
     </section>
 
-    <section class="footer">
+    <footer class="footer" style="margin-top:40px;">
       <div class="foot-row">
-        <div>© 2026 Food Store — Advanced Programming 1 (Go)</div>
-        <div>Light Theme UI • Monolith Architecture • PostgreSQL</div>
+        <div>© 2026 Food Store</div>
+        <div>Go · PostgreSQL · Monolith</div>
       </div>
-    </section>
+    </footer>
+
   </main>
 
   <script>
-    // Check authentication state and update buttons
     function updateAuthButtons() {
-      const userToken = localStorage.getItem('userToken');
-      const userName = localStorage.getItem('userName');
-      
+      const token = localStorage.getItem('userToken');
+      const name = localStorage.getItem('userName');
+
       const loginBtn = document.getElementById('loginBtn');
       const registerBtn = document.getElementById('registerBtn');
-      const userNameSpan = document.getElementById('userName');
+      const userName = document.getElementById('userName');
       const logoutBtn = document.getElementById('logoutBtn');
       const profileBtn = document.getElementById('profileBtn');
 
-      if (userToken) {
-        // User is logged in
+      if (token) {
         loginBtn.style.display = 'none';
         registerBtn.style.display = 'none';
-        userNameSpan.style.display = 'inline';
+        userName.style.display = 'inline';
         logoutBtn.style.display = 'inline-block';
         profileBtn.style.display = 'inline-block';
-        userNameSpan.textContent = userName || 'User';
+        userName.textContent = name || 'User';
       } else {
-        // User is not logged in
         loginBtn.style.display = 'inline-block';
         registerBtn.style.display = 'inline-block';
-        userNameSpan.style.display = 'none';
+        userName.style.display = 'none';
         logoutBtn.style.display = 'none';
         profileBtn.style.display = 'none';
       }
@@ -179,11 +151,9 @@
       window.location.href = '/';
     }
 
-    // Initialize on page load
     updateAuthButtons();
-    
-    // Update when storage changes (in case of logout from another tab)
     window.addEventListener('storage', updateAuthButtons);
   </script>
+
 </body>
 </html>

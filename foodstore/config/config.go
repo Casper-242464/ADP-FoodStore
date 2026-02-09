@@ -22,7 +22,7 @@ func GetConfig() *Config {
 		DBHost:        getEnv("DB_HOST", "localhost"),
 		DBPort:        getEnv("DB_PORT", "5432"),
 		DBUser:        getEnv("DB_USER", "postgres"),
-		DBPassword:    getEnv("DB_PASSWORD", "123456789"),
+		DBPassword:    getEnv("DB_PASSWORD", "1109"),
 		DBName:        getEnv("DB_NAME", "foodstore"),
 		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
 		ServerAddress: getEnv("SERVER_ADDR", ":8080"),

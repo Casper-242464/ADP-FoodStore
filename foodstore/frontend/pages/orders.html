@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food Store — Place Order</title>
+  <title>Food Store — Orders</title>
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
 <body>
@@ -34,95 +34,100 @@
 
   <main class="container main-pad">
     <div class="card">
-      <h2 style="margin:0;">Place Order</h2>
-      <p class="hint" style="margin:6px 0 16px 0;">Sends JSON to <b>POST /orders</b></p>
+      <h2 style="margin:0;">Your Orders</h2>
+      <p class="hint" style="margin:6px 0 6px 0;">Orders for your user ID (from server)</p>
+      <div class="hint" id="userIdInfo" style="margin:0 0 10px 0;"></div>
+      <div class="hint" id="ordersHint" style="margin:0 0 12px 0;"></div>
 
-      <div class="grid">
-        <div class="field">
-          <label class="hint">User ID (must exist in DB)</label>
-          <input id="userId" placeholder="e.g. 1" />
-        </div>
-        <div class="field">
-          <label class="hint">Items (format: productId:qty, productId)</label>
-          <input id="items" placeholder="e.g. 2:1, 5, 7:3" />
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-        <button class="btn primary" type="button" onclick="placeOrder()">Submit Order</button>
-        <a class="btn" href="/ui/products">Open Products</a>
-      </div>
-
-      <div style="margin-top:14px;">
-        <div class="hint" style="margin-bottom:6px;">Server response:</div>
-        <pre id="out">{}</pre>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px;">Order ID</th>
+            <th style="width:120px;">User ID</th>
+            <th>Items</th>
+            <th style="width:160px;">Total</th>
+            <th style="width:180px;">Created</th>
+          </tr>
+        </thead>
+        <tbody id="orderRows"></tbody>
+      </table>
     </div>
+
   </main>
 
   <script>
-    function parseItems(s){
-      const raw = (s || "")
-        .split(/[,\s;]+/)
-        .map(x => x.trim())
-        .filter(Boolean);
+    const ORDER_KEY = "orderHistory";
 
-      const items = [];
-      const bad = [];
+    function setOrdersHint(text){
+      const el = document.getElementById("ordersHint");
+      el.textContent = text || "";
+    }
 
-      for (const token of raw) {
-        if (token.includes(":")) {
-          const parts = token.split(":").map(v => v.trim());
-          if (parts.length !== 2) { bad.push(token); continue; }
+    function setUserIdInfo(userId){
+      const el = document.getElementById("userIdInfo");
+      if (userId && Number.isFinite(userId)) {
+        el.textContent = `User ID: ${userId}`;
+      } else {
+        el.textContent = "User ID is not set. Place an order from Cart first.";
+      }
+    }
 
-          const product_id = Number(parts[0]);
-          const quantity = Number(parts[1]);
+    function renderOrders(orders){
+      const rows = document.getElementById("orderRows");
+      const list = Array.isArray(orders) ? orders : JSON.parse(localStorage.getItem(ORDER_KEY) || "[]");
+      if (!list.length) {
+        rows.innerHTML = `<tr><td colspan="5" class="hint" style="padding:14px;">No orders yet</td></tr>`;
+        return;
+      }
+      rows.innerHTML = list.map(order => {
+        const items = (order.items || []).map(item => {
+          const name = item.name ?? item.product_name ?? item.id ?? item.product_id ?? "-";
+          return `${name} x${item.quantity ?? "-"}`;
+        }).join(", ");
+        const created = order.created_at ? new Date(order.created_at).toLocaleString() : "-";
+        return `
+          <tr>
+            <td>${order.order_id ?? order.id ?? "-"}</td>
+            <td>${order.user_id ?? "-"}</td>
+            <td>${escapeHtml(items || "-")}</td>
+            <td>${Number.isFinite(order.total_price) ? Number(order.total_price).toFixed(2) : "-"}</td>
+            <td>${escapeHtml(created)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
 
-          if (!Number.isFinite(product_id) || !Number.isFinite(quantity) || quantity <= 0) {
-            bad.push(token); continue;
-          }
-          items.push({ product_id, quantity });
-          continue;
+    async function loadOrders(){
+      const storedId = localStorage.getItem("userId");
+      const userId = Number(storedId || 0);
+      setUserIdInfo(Number.isFinite(userId) && userId > 0 ? userId : 0);
+      if (!Number.isFinite(userId) || userId <= 0) {
+        setOrdersHint("Add items to cart and press Order to create history.");
+        renderOrders();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/orders?user_id=${userId}`);
+        if (!res.ok) {
+          setOrdersHint("Could not load orders from server. Showing local history.");
+          renderOrders();
+          return;
         }
-
-        const product_id = Number(token);
-        if (!Number.isFinite(product_id) || product_id <= 0) { bad.push(token); continue; }
-        items.push({ product_id, quantity: 1 });
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setOrdersHint(list.length ? "" : "No orders yet for this user.");
+        renderOrders(list);
+      } catch {
+        setOrdersHint("Could not load orders from server. Showing local history.");
+        renderOrders();
       }
-
-      if (items.length === 0) return { items: [], error: "No valid items found" };
-      if (bad.length) return { items: [], error: "Invalid items: " + bad.join(", ") };
-      return { items, error: "" };
     }
 
-    async function placeOrder(){
-      const user_id = Number(document.getElementById("userId").value);
-      const parsed = parseItems(document.getElementById("items").value);
-
-      if (!Number.isFinite(user_id) || user_id <= 0) {
-        document.getElementById("out").textContent =
-          JSON.stringify({ error: "User ID must be a positive number" }, null, 2);
-        return;
-      }
-      if (parsed.error) {
-        document.getElementById("out").textContent =
-          JSON.stringify({ error: parsed.error }, null, 2);
-        return;
-      }
-
-      const payload = { user_id, items: parsed.items };
-
-      const res = await fetch("/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const text = await res.text();
-      document.getElementById("out").textContent = text;
+    function escapeHtml(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     }
 
-    // Check authentication state and update buttons
     function updateAuthButtons() {
       const userToken = localStorage.getItem('userToken');
       const userName = localStorage.getItem('userName');
@@ -155,13 +160,14 @@
       localStorage.removeItem('userName');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userDate');
+      localStorage.removeItem('userId');
       updateAuthButtons();
       window.location.href = '/';
     }
 
     updateAuthButtons();
     window.addEventListener('storage', updateAuthButtons);
-    }
+    loadOrders();
   </script>
 </body>
 </html>

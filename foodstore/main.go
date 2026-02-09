@@ -38,14 +38,12 @@ func main() {
 	http.HandleFunc("/orders", oh.PlaceOrder)
 	http.HandleFunc("/contact", ch.HandleContact)
 
-	// Auth API endpoints
 	http.HandleFunc("/api/register", uh.Register)
 	http.HandleFunc("/api/login", uh.Login)
 	http.HandleFunc("/api/profile", uh.GetProfile)
 
 	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
 
-	// UI Pages
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
 	http.HandleFunc("/ui/orders", handlers.OrdersPage)
 	http.HandleFunc("/ui/cart", handlers.CartPage)

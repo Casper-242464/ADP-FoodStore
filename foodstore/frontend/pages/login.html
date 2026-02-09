@@ -59,7 +59,6 @@
   </main>
 
   <script>
-    // Check if already logged in
     if (localStorage.getItem('userToken')) {
       window.location.href = '/ui/profile';
     }
@@ -88,12 +87,14 @@
           return;
         }
         
-        // Store user info in localStorage
         localStorage.setItem('userToken', 'token-' + Date.now());
         localStorage.setItem('userEmail', data.user.email);
         localStorage.setItem('userName', data.user.name);
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userDate', new Date().toLocaleDateString());
+        if (data.user.id !== undefined && data.user.id !== null) {
+          localStorage.setItem('userId', String(data.user.id));
+        }
         
         messageDiv.style.display = 'block';
         messageDiv.style.background = 'rgba(20, 184, 166, 0.1)';

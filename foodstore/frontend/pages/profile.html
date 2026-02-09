@@ -71,7 +71,6 @@
   </main>
 
   <script>
-    // Check if user is logged in
     const userToken = localStorage.getItem('userToken');
     if (!userToken) {
       window.location.href = '/ui/login';
@@ -94,6 +93,7 @@
       localStorage.removeItem('userName');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userDate');
+      localStorage.removeItem('userId');
       window.location.href = '/';
     }
   </script>

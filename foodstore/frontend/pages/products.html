@@ -70,7 +70,11 @@
           <tr>
             <th style="width:90px;">ID</th>
             <th>Name</th>
+            <th>Description</th>
+            <th style="width:160px;">Category</th>
+            <th style="width:110px;">Stock</th>
             <th style="width:140px;">Price</th>
+            <th style="width:160px;">Qty</th>
             <th style="width:140px;">Add</th>
           </tr>
         </thead>
@@ -81,6 +85,7 @@
 </body>
 <script>
     let all = [];
+    const CART_KEY = "cartItems";
 
     async function loadProducts(){
       const res = await fetch("/products");
@@ -117,14 +122,92 @@
         <tr>
           <td>${p.id ?? "-"}</td>
           <td>${escapeHtml(p.name ?? "Unnamed")}</td>
-          <td>${p.price ?? "-"}</td>
-          <td><button class="btn" onclick="addToCart(${p.id ?? 0})">Add</button></td>
+          <td>${escapeHtml(p.description ?? "-")}</td>
+          <td>${escapeHtml(p.category ?? "-")}</td>
+          <td>${Number.isFinite(p.stock) ? p.stock : "-"}</td>
+          <td>${Number.isFinite(p.price) ? p.price : "-"}</td>
+          <td>
+            <div class="qty-control">
+              <button class="qty-btn" type="button" onclick="stepQty(${p.id ?? 0}, -1)" ${p.stock === 0 ? "disabled" : ""}>-</button>
+              <input id="qty-${p.id ?? 0}" type="number" min="0" ${Number.isFinite(p.stock) && p.stock > 0 ? `max="${p.stock}"` : ""} value="0" oninput="clampQty(${p.id ?? 0})" ${p.stock === 0 ? "disabled" : ""} />
+              <button class="qty-btn" type="button" onclick="stepQty(${p.id ?? 0}, 1)" ${p.stock === 0 ? "disabled" : ""}>+</button>
+            </div>
+          </td>
+          <td><button class="btn" onclick="addToCart(${p.id ?? 0})" ${p.stock === 0 ? "disabled" : ""}>Add</button></td>
         </tr>
-      `).join("") || `<tr><td colspan="4" class="hint" style="padding:14px;">No products yet. Add seed data in DB or in-memory.</td></tr>`;
+      `).join("") || `<tr><td colspan="9" class="hint" style="padding:14px;">No products yet. Add seed data in DB or in-memory.</td></tr>`;
+    }
+
+    function loadCart(){
+      try {
+        return JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCart(items){
+      localStorage.setItem(CART_KEY, JSON.stringify(items));
+    }
+
+    function clampQty(id){
+      const input = document.getElementById(`qty-${id}`);
+      if (!input) return;
+      const max = Number(input.max);
+      let val = Number(input.value);
+      if (!Number.isFinite(val) || val < 0) val = 0;
+      if (Number.isFinite(max) && max > 0 && val > max) val = max;
+      input.value = val;
+    }
+
+    function stepQty(id, delta){
+      const input = document.getElementById(`qty-${id}`);
+      if (!input) return;
+      input.value = Number(input.value || 1) + delta;
+      clampQty(id);
     }
 
     function addToCart(id){
-      alert("Cart is planned. ProductID = " + id);
+      const product = all.find(p => p.id === id);
+      if (!product) return;
+
+      const input = document.getElementById(`qty-${id}`);
+      const rawQty = input ? Number(input.value) : 0;
+      const qty = Number.isFinite(rawQty) ? Math.floor(rawQty) : 0;
+
+      if (Number.isFinite(product.stock) && product.stock <= 0) {
+        alert("Out of stock");
+        return;
+      }
+      if (qty <= 0) {
+        alert("Select quantity greater than 0");
+        return;
+      }
+      if (Number.isFinite(product.stock) && qty > product.stock) {
+        alert("Not enough stock");
+        return;
+      }
+
+      const cart = loadCart();
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        existing.quantity += qty;
+        if (Number.isFinite(product.stock) && existing.quantity > product.stock) {
+          existing.quantity = product.stock;
+        }
+      } else {
+        cart.push({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          category: product.category,
+          price: product.price,
+          stock: product.stock,
+          quantity: qty
+        });
+      }
+      saveCart(cart);
+      alert("Added to cart");
     }
 
     function escapeHtml(s){
@@ -134,7 +217,6 @@
     document.getElementById("q").addEventListener("input", render);
     loadProducts();
 
-    // Check authentication state and update buttons
     function updateAuthButtons() {
       const userToken = localStorage.getItem('userToken');
       const userName = localStorage.getItem('userName');
@@ -167,6 +249,7 @@
       localStorage.removeItem('userName');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userDate');
+      localStorage.removeItem('userId');
       updateAuthButtons();
       window.location.href = '/';
     }
