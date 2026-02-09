@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top:14px;">
+      <div class="card" id="createProductCard" style="margin-top:14px;">
         <div class="row">
           <div>
             <h3 style="margin:0;">Create Product</h3>
@@ -95,6 +95,11 @@
     }
 
     async function createProduct(){
+      const role = localStorage.getItem("userRole") || "buyer";
+      if (role !== "seller") {
+        document.getElementById("createOut").textContent = "Only sellers can add products.";
+        return;
+      }
       const payload = {
         name: document.getElementById("p_name").value.trim(),
         description: document.getElementById("p_desc").value.trim(),
@@ -215,6 +220,11 @@
     }
 
     document.getElementById("q").addEventListener("input", render);
+    const role = localStorage.getItem("userRole") || "buyer";
+    const createCard = document.getElementById("createProductCard");
+    if (role !== "seller" && createCard) {
+      createCard.style.display = "none";
+    }
     loadProducts();
 
     function updateAuthButtons() {

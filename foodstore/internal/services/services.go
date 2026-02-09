@@ -141,28 +141,40 @@ func NewUserService(ur *repositories.UserRepository) *UserService {
 var (
 	ErrUserAlreadyExists  = errors.New("user with this email already exists")
 	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInvalidRole        = errors.New("invalid role")
 )
 
-func (us *UserService) Register(name, email, password string) (int, error) {
+func (us *UserService) Register(name, email, password, role string) (int, string, error) {
 	if name == "" || email == "" || password == "" {
-		return 0, errors.New("name, email, and password are required")
+		return 0, "", errors.New("name, email, and password are required")
 	}
 
 	exists, err := us.userRepo.UserExistsByEmail(email)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	if exists {
-		return 0, ErrUserAlreadyExists
+		return 0, "", ErrUserAlreadyExists
+	}
+
+	if role == "" {
+		role = "buyer"
+	}
+	if role != "buyer" && role != "seller" {
+		return 0, "", ErrInvalidRole
 	}
 
 	user := models.User{
 		Name:         name,
 		Email:        email,
 		PasswordHash: password, 
-		Role:         "buyer",
+		Role:         role,
 	}
-	return us.userRepo.CreateUser(user)
+	id, err := us.userRepo.CreateUser(user)
+	if err != nil {
+		return 0, "", err
+	}
+	return id, role, nil
 }
 
 func (us *UserService) Login(email, password string) (*models.User, error) {

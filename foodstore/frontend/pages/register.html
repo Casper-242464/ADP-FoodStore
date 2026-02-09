@@ -56,6 +56,14 @@
             <input type="password" id="confirmPassword" name="confirmPassword" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
           </div>
 
+          <div>
+            <label for="role" style="display: block; margin-bottom: 6px; font-weight: 700;">Role</label>
+            <select id="role" name="role" required style="width: 100%; padding: 12px; border: 1px solid var(--stroke); border-radius: 8px; font-size: 14px;">
+              <option value="buyer" selected>Buyer</option>
+              <option value="seller">Seller</option>
+            </select>
+          </div>
+
           <button type="submit" class="btn primary" style="width: 100%; margin-top: 10px;">Create Account</button>
           
           <p style="text-align: center; margin: 10px 0 0 0; color: var(--muted); font-size: 14px;">
@@ -81,6 +89,7 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
+      const role = document.getElementById('role').value;
 
       if (password !== confirmPassword) {
         messageDiv.style.display = 'block';
@@ -94,7 +103,7 @@
         const response = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({ name, email, password, role })
         });
         
         const data = await response.json();
@@ -110,7 +119,7 @@
         localStorage.setItem('userToken', 'token-' + data.user_id);
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userName', name);
-        localStorage.setItem('userRole', 'buyer');
+        localStorage.setItem('userRole', data.role || role || 'buyer');
         localStorage.setItem('userDate', new Date().toLocaleDateString());
         if (data.user_id !== undefined && data.user_id !== null) {
           localStorage.setItem('userId', String(data.user_id));
