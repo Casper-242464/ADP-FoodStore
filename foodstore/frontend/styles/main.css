@@ -284,6 +284,23 @@ td{background:rgba(255,255,255,.75);border:1px solid var(--stroke);padding:12px;
 tr td:first-child{border-radius:14px 0 0 14px}
 tr td:last-child{border-radius:0 14px 14px 0}
 
+.prod-name{
+  white-space: normal;
+  word-break: break-word;
+  min-width: 220px;
+}
+.prod-name input{
+  width: 100%;
+}
+
+.col-id{width:70px}
+.col-price{width:90px}
+.col-add{width:90px}
+.col-save{width:90px}
+.col-id,.col-price,.col-add,.col-save{
+  white-space: nowrap;
+}
+
 pre{
   background:rgba(255,255,255,.6);
   border:1px solid var(--stroke);

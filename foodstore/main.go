@@ -6,6 +6,7 @@ import (
 
 	"foodstore/config"
 	"foodstore/internal/handlers"
+	"foodstore/internal/middleware"
 	"foodstore/internal/repositories"
 	"foodstore/internal/services"
 )
@@ -34,7 +35,7 @@ func main() {
 	uh := handlers.NewUserHandler(userService)
 
 	http.HandleFunc("/health", handlers.HealthHandler)
-	http.HandleFunc("/products", ph.ListProducts)
+	http.Handle("/products", middleware.RequireSeller(userService, http.HandlerFunc(ph.ListProducts)))
 	http.HandleFunc("/orders", oh.PlaceOrder)
 	http.HandleFunc("/contact", ch.HandleContact)
 
@@ -43,6 +44,7 @@ func main() {
 	http.HandleFunc("/api/profile", uh.GetProfile)
 
 	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("frontend/js"))))
 
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
 	http.HandleFunc("/ui/orders", handlers.OrdersPage)
@@ -53,5 +55,5 @@ func main() {
 	http.HandleFunc("/", handlers.HomePage)
 
 	log.Println("Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(cfg.ServerAddress, nil))
+	log.Fatal(http.ListenAndServe(cfg.ServerAddress, middleware.Logging(http.DefaultServeMux)))
 }
