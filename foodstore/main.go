@@ -59,6 +59,6 @@ func main() {
 	http.HandleFunc("/ui/profile", handlers.ProfilePage)
 	http.HandleFunc("/", handlers.HomePage)
 
-	log.Println("Server running on http://localhost:8080")
+	log.Printf("Server running on %s", cfg.ServerAddress)
 	log.Fatal(http.ListenAndServe(cfg.ServerAddress, middleware.Logging(http.DefaultServeMux)))
 }

@@ -5,9 +5,11 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"os"
+	"strings"
 )
 
 type Config struct {
+	DatabaseURL   string
 	DBHost        string
 	DBPort        string
 	DBUser        string
@@ -18,20 +20,36 @@ type Config struct {
 }
 
 func GetConfig() *Config {
+	serverAddr := getEnv("SERVER_ADDR", ":8080")
+	if port := strings.TrimSpace(os.Getenv("PORT")); port != "" {
+		if strings.HasPrefix(port, ":") {
+			serverAddr = port
+		} else {
+			serverAddr = ":" + port
+		}
+	}
+
 	return &Config{
+		DatabaseURL:   strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		DBHost:        getEnv("DB_HOST", "localhost"),
 		DBPort:        getEnv("DB_PORT", "5432"),
 		DBUser:        getEnv("DB_USER", "postgres"),
 		DBPassword:    getEnv("DB_PASSWORD", "123456789"),
 		DBName:        getEnv("DB_NAME", "foodstore"),
 		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
-		ServerAddress: getEnv("SERVER_ADDR", ":8080"),
+		ServerAddress: serverAddr,
 	}
 }
 
 func ConnectDB(cfg *Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
+	dsn := strings.TrimSpace(cfg.DatabaseURL)
+	if dsn == "" {
+		if strings.TrimSpace(os.Getenv("RENDER")) != "" {
+			return nil, fmt.Errorf("DATABASE_URL is required on Render")
+		}
+		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
+	}
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err

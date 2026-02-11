@@ -290,6 +290,25 @@ td{background:rgba(255,255,255,.75);border:1px solid var(--stroke);padding:12px;
 tr td:first-child{border-radius:14px 0 0 14px}
 tr td:last-child{border-radius:0 14px 14px 0}
 
+.table-scroll{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+
+.table-scroll table{
+  margin-top:0;
+}
+
+.orders-table{
+  min-width:960px;
+}
+
+.seller-orders-table{
+  min-width:1240px;
+}
+
 .prod-name{
   white-space: normal;
   word-break: break-word;
@@ -488,10 +507,57 @@ pre{
 }
 
 @media (max-width:700px){
+  .table-scroll th{
+    padding:0 10px;
+    font-size:11px;
+  }
+
+  .table-scroll td{
+    padding:10px;
+    font-size:13px;
+  }
+
   .seller-edit-grid{
     grid-template-columns:1fr;
   }
   .seller-form-grid{
     grid-template-columns:1fr;
+  }
+}
+
+/* Mobile navigation fix: keep links visible instead of hiding them */
+@media (max-width:980px){
+  .nav-inner{
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .brand{
+    width:100%;
+  }
+
+  .nav-links{
+    display:flex;
+    width:100%;
+    order:2;
+    gap:8px;
+    overflow-x:auto;
+    white-space:nowrap;
+    padding-bottom:2px;
+    scrollbar-width:thin;
+  }
+
+  .nav-links a{
+    flex:0 0 auto;
+  }
+
+  .auth-buttons,
+  .nav-inner > div:last-child{
+    width:100%;
+    order:3;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
   }
 }
