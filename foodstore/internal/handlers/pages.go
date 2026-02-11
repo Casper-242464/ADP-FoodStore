@@ -17,6 +17,14 @@ func ProductsPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "frontend/pages/products.html")
 }
 
+func SellerProductsPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/pages/seller_products.html")
+}
+
+func SellerOrdersPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/pages/seller_orders.html")
+}
+
 func OrdersPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("frontend/pages/orders.html")
 	if err != nil {
@@ -42,8 +50,8 @@ func OrdersPage(w http.ResponseWriter, r *http.Request) {
 			Total   string
 			Created string
 		}{
-			{ID: 101, UserID: 7, Items: "2x Apples, 1x Milk", Total: "$12.50", Created: "2026-02-10 22:30"},
-			{ID: 102, UserID: 7, Items: "1x Bread, 3x Eggs", Total: "$9.10", Created: "2026-02-09 18:05"},
+			{ID: 101, UserID: 7, Items: "2x Apples, 1x Milk", Total: "5800.00 ₸", Created: "2026-02-10 22:30"},
+			{ID: 102, UserID: 7, Items: "1x Bread, 3x Eggs", Total: "4200.00 ₸", Created: "2026-02-09 18:05"},
 		},
 	}
 

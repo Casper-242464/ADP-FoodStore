@@ -39,36 +39,40 @@
       <div class="hint" id="userIdInfo" style="margin:0 0 10px 0;"></div>
       <div class="hint" id="ordersHint" style="margin:0 0 12px 0;"></div>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width:120px;">Order ID</th>
-            <th style="width:120px;">User ID</th>
-            <th>Items</th>
-            <th style="width:160px;">Total</th>
-            <th style="width:180px;">Created</th>
-          </tr>
-        </thead>
+	      <table>
+	        <thead>
+	          <tr>
+	            <th style="width:120px;">Order ID</th>
+	            <th>Items</th>
+	            <th style="width:160px;">Total</th>
+	            <th style="width:220px;">Address</th>
+	            <th style="width:180px;">Phone</th>
+	            <th style="width:220px;">Comment</th>
+	            <th style="width:180px;">Created</th>
+	          </tr>
+	        </thead>
         <tbody id="orderRows">
           {{ range .Orders }}
-          <tr>
-            <td>{{ .ID }}</td>
-            <td>{{ .UserID }}</td>
-            <td>{{ .Items }}</td>
-            <td>{{ .Total }}</td>
-            <td>{{ .Created }}</td>
-          </tr>
-          {{ else }}
-          <tr>
-            <td colspan="5" class="hint">No orders yet</td>
-          </tr>
-          {{ end }}
-        </tbody>
-      </table>
+	          <tr>
+	            <td>{{ .ID }}</td>
+	            <td>{{ .Items }}</td>
+	            <td>{{ .Total }}</td>
+	            <td>-</td>
+	            <td>-</td>
+	            <td>-</td>
+	            <td>{{ .Created }}</td>
+	          </tr>
+	          {{ else }}
+	          <tr>
+	            <td colspan="7" class="hint">No orders yet</td>
+	          </tr>
+	          {{ end }}
+	        </tbody>
+	      </table>
     </div>
 
   </main>
 
-  <script src="../js/orders.js"></script>
+	  <script src="/js/orders.js?v=20260212"></script>
 </body>
 </html>

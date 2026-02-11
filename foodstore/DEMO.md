@@ -12,7 +12,7 @@ psql -U postgres -d foodstore -c "INSERT INTO users (name,email,password_hash) V
 
 ## 2) Run backend
 ```
-DB_USER=postgres DB_PASSWORD=123456789 DB_NAME=foodstore DB_SSLMODE=disable go run .
+DB_USER=postgres DB_PASSWORD=1109 DB_NAME=foodstore DB_SSLMODE=disable go run .
 ```
 
 ## 3) Endpoints to show (JSON)
@@ -26,18 +26,31 @@ curl http://localhost:8080/products
 
 ```
 curl -X POST http://localhost:8080/products \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Apple","description":"Fresh","price":1.50,"stock":10,"category":"Fruit"}'
+  -H "X-User-Id: 1" \
+  -F "name=Apple" \
+  -F "description=Fresh" \
+  -F "unit=kg" \
+  -F "price=1.50" \
+  -F "stock=10" \
+  -F "category=Fruit" \
+  -F "image=@/absolute/path/to/apple.jpg"
 ```
 
 ```
 curl -X PUT http://localhost:8080/products \
-  -H "Content-Type: application/json" \
-  -d '{"id":1,"name":"Apple","description":"Fresh","price":1.75,"stock":12,"category":"Fruit"}'
+  -H "X-User-Id: 1" \
+  -F "id=1" \
+  -F "name=Apple" \
+  -F "description=Fresh" \
+  -F "unit=kg" \
+  -F "price=1.75" \
+  -F "stock=12" \
+  -F "category=Fruit"
 ```
 
 ```
-curl -X DELETE "http://localhost:8080/products?id=1"
+curl -X DELETE "http://localhost:8080/products?id=1" \
+  -H "X-User-Id: 1"
 ```
 
 ```
@@ -54,4 +67,5 @@ curl -X POST http://localhost:8080/contact \
 
 ## 4) Frontend demo (optional)
 - http://localhost:8080/ui/products
+- http://localhost:8080/ui/seller/products
 - http://localhost:8080/ui/orders

@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <base href="/" />
   <title>Food Store — Contacts</title>
-  <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
   <div class="nav">
@@ -33,38 +34,62 @@
   </div>
 
   <main class="container main-pad">
-    <div class="card">
+    <div class="card" id="contactFormCard">
       <h2 style="margin:0;">Contact Us</h2>
       <p class="hint" style="margin:6px 0 16px 0;">
-        Simple form for demo (later will be handled by Go).
+        Send a message to administrator.
       </p>
 
-      <form action="/contact" method="POST">
+      <form id="contactForm">
         <div class="grid">
           <div class="field">
             <label class="hint">Name</label>
-            <input type="text" name="name" required placeholder="Your name">
+            <input type="text" id="contactName" name="name" required placeholder="Your name">
           </div>
 
           <div class="field">
             <label class="hint">Email</label>
-            <input type="email" name="email" required placeholder="example@mail.com">
+            <input type="email" id="contactEmail" name="email" required placeholder="example@mail.com">
           </div>
         </div>
 
         <div class="field" style="margin-top:12px;">
           <label class="hint">Message</label>
-          <textarea name="message" required placeholder="Write your message..."></textarea>
+          <textarea id="contactMessage" name="message" required placeholder="Write your message..."></textarea>
         </div>
 
         <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn primary" type="submit">Send Message</button>
           <a class="btn" href="/">Back to Home</a>
         </div>
+        <div id="contactOut" class="hint" style="margin-top:10px;"></div>
       </form>
+    </div>
+
+    <div class="card" id="adminMessagesCard" style="display:none; margin-top:14px;">
+      <h2 style="margin:0;">Incoming Contact Messages</h2>
+      <p class="hint" style="margin:6px 0 12px 0;">Only messages from other users are shown.</p>
+      <div class="hint" id="adminMessagesHint" style="margin:0 0 12px 0;"></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px;">ID</th>
+            <th style="width:180px;">Name</th>
+            <th style="width:220px;">Email</th>
+            <th>Message</th>
+            <th style="width:160px;">Status</th>
+            <th style="width:200px;">Created</th>
+          </tr>
+        </thead>
+        <tbody id="adminMessageRows">
+          <tr>
+            <td colspan="6" class="hint" style="padding:14px;">No messages yet</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </main>
 
-  <script src="../js/contacts.js"></script>
+  <script src="/js/contacts.js?v=20260213"></script>
 </body>
 </html>

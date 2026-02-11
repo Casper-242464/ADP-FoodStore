@@ -1,11 +1,17 @@
 const ORDER_KEY = "orderHistory";
 
-function setOrdersHint(text){
+function formatPriceKZT(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return `${amount.toFixed(2)} ₸`;
+}
+
+function setOrdersHint(text) {
   const el = document.getElementById("ordersHint");
   el.textContent = text || "";
 }
 
-function setUserIdInfo(userId){
+function setUserIdInfo(userId) {
   const el = document.getElementById("userIdInfo");
   if (userId && Number.isFinite(userId)) {
     el.textContent = `User ID: ${userId}`;
@@ -14,11 +20,11 @@ function setUserIdInfo(userId){
   }
 }
 
-function renderOrders(orders){
+function renderOrders(orders) {
   const rows = document.getElementById("orderRows");
   const list = Array.isArray(orders) ? orders : JSON.parse(localStorage.getItem(ORDER_KEY) || "[]");
   if (!list.length) {
-    rows.innerHTML = `<tr><td colspan="5" class="hint" style="padding:14px;">No orders yet</td></tr>`;
+    rows.innerHTML = `<tr><td colspan="7" class="hint" style="padding:14px;">No orders yet</td></tr>`;
     return;
   }
   rows.innerHTML = list.map(order => {
@@ -30,16 +36,18 @@ function renderOrders(orders){
     return `
       <tr>
         <td>${order.order_id ?? order.id ?? "-"}</td>
-        <td>${order.user_id ?? "-"}</td>
         <td>${escapeHtml(items || "-")}</td>
-        <td>${Number.isFinite(order.total_price) ? Number(order.total_price).toFixed(2) : "-"}</td>
+        <td>${formatPriceKZT(order.total_price)}</td>
+        <td>${escapeHtml(order.delivery_address || "-")}</td>
+        <td>${escapeHtml(order.phone_number || "-")}</td>
+        <td>${escapeHtml(order.comment || "-")}</td>
         <td>${escapeHtml(created)}</td>
       </tr>
     `;
   }).join("");
 }
 
-async function loadOrders(){
+async function loadOrders() {
   const storedId = localStorage.getItem("userId");
   const userId = Number(storedId || 0);
   setUserIdInfo(Number.isFinite(userId) && userId > 0 ? userId : 0);

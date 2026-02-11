@@ -30,6 +30,9 @@ main.go
 psql -U postgres -d foodstore -f "/Users/bekasyljaksylyk/работа/advanced programming1/assignment3/foodstore/schema.sql"
 ```
 
+If you already have an old DB version, run the same command again.  
+`schema.sql` now includes `ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...` upgrades for existing tables.
+
 2) Seed a user (required for orders)
 ```
 psql -U postgres -d foodstore -c "INSERT INTO users (name,email,password_hash) VALUES ('Demo User','demo@example.com','x') RETURNING id;"
@@ -37,7 +40,7 @@ psql -U postgres -d foodstore -c "INSERT INTO users (name,email,password_hash) V
 
 3) Run server
 ```
-DB_USER=postgres DB_PASSWORD=123456789 DB_NAME=foodstore DB_SSLMODE=disable go run .
+DB_USER=postgres DB_PASSWORD=1109 DB_NAME=foodstore DB_SSLMODE=disable go run .
 ```
 
 Server runs at:
@@ -49,12 +52,12 @@ http://localhost:8080
 - DB_HOST (default: localhost)
 - DB_PORT (default: 5432)
 - DB_USER (default: postgres)
-- DB_PASSWORD (default: 123456789)
+- DB_PASSWORD (default: 1109)
 - DB_NAME (default: foodstore)
 - DB_SSLMODE (default: disable)
 - SERVER_ADDR (default: :8080)
 
-## Core API (JSON)
+## Core API
 Health:
 ```
 GET /health
@@ -63,8 +66,9 @@ GET /health
 Products CRUD:
 ```
 GET    /products
-POST   /products
-PUT    /products
+GET    /products?mine=1            (seller: own products only, requires X-User-Id)
+POST   /products                   (multipart/form-data)
+PUT    /products                   (multipart/form-data)
 DELETE /products?id=1
 ```
 
@@ -82,20 +86,34 @@ POST /contact
 Create product:
 ```
 curl -X POST http://localhost:8080/products \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Apple","description":"Fresh","price":1.5,"stock":10,"category":"Fruit"}'
+  -H "X-User-Id: 1" \
+  -F "name=Apple" \
+  -F "description=Fresh" \
+  -F "unit=kg" \
+  -F "price=1.50" \
+  -F "stock=10" \
+  -F "category=Fruit" \
+  -F "image=@/absolute/path/to/apple.jpg"
 ```
 
 Update product:
 ```
 curl -X PUT http://localhost:8080/products \
-  -H "Content-Type: application/json" \
-  -d '{"id":1,"name":"Apple","description":"Fresh","price":1.75,"stock":12,"category":"Fruit"}'
+  -H "X-User-Id: 1" \
+  -F "id=1" \
+  -F "name=Apple" \
+  -F "description=Fresh" \
+  -F "unit=kg" \
+  -F "price=1.75" \
+  -F "stock=12" \
+  -F "category=Fruit" \
+  -F "image=@/absolute/path/to/new-apple.jpg"
 ```
 
 Delete product:
 ```
-curl -X DELETE "http://localhost:8080/products?id=1"
+curl -X DELETE "http://localhost:8080/products?id=1" \
+  -H "X-User-Id: 1"
 ```
 
 Place order:
@@ -113,13 +131,15 @@ curl -X POST http://localhost:8080/contact \
 ```
 
 ## UI Pages (Optional)
-- /ui/products (create + list products)
+- /ui/products (catalog for buyers)
+- /ui/seller/products (seller: create + edit + delete own products)
 - /ui/orders (place order)
 - /ui/cart
 
 Orders page input format:
 - User ID: existing user id (e.g. 1)
 - Items: "1:1, 2, 3:2" (if qty is missing, it defaults to 1)
+- Stock is decreased automatically after successful order.
 
 ## Milestone 2 Checklist Mapping
 - Backend app: net/http server in `main.go`

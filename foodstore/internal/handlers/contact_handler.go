@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -52,7 +53,8 @@ func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) 
 			json.NewEncoder(w).Encode(map[string]string{"error": "All fields are required"})
 			return
 		}
-		if err := ch.service.SendMessage(name, email, message); err != nil {
+		userID := parseOptionalUserID(r)
+		if err := ch.service.SendMessageFromUser(userID, name, email, message); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -66,4 +68,44 @@ func (ch *ContactHandler) HandleContact(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+func (ch *ContactHandler) ListMessagesForAdmin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	adminID, err := getUserIDFromHeader(r)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "missing or invalid user id"})
+		return
+	}
+
+	messages, err := ch.service.ListMessagesForAdmin(adminID)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrAdminRequired) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}
+
+func parseOptionalUserID(r *http.Request) int {
+	userID, err := getUserIDFromHeader(r)
+	if err != nil {
+		return 0
+	}
+	return userID
 }

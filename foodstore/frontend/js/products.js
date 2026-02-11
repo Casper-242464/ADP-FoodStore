@@ -1,7 +1,7 @@
 let all = [];
 const CART_KEY = "cartItems";
 
-async function loadProducts(){
+async function loadProducts() {
   try {
     const res = await fetch("/products");
     if (!res.ok) {
@@ -15,77 +15,97 @@ async function loadProducts(){
     all = [];
     render();
     console.error(err);
-    const out = document.getElementById("createOut");
-    if (out) {
-      out.textContent = "Failed to load products. Please refresh.";
-    }
   }
 }
 
-function capitalizeFirst(value){
-  const s = String(value || "");
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function placeholderImage(name) {
+  const label = (String(name || "No Image").trim() || "No Image").slice(0, 24);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#dbeafe'/><stop offset='100%' stop-color='#c7d2fe'/></linearGradient></defs><rect width='640' height='420' fill='url(#g)'/><circle cx='525' cy='92' r='64' fill='rgba(255,255,255,0.42)'/><circle cx='132' cy='346' r='92' fill='rgba(255,255,255,0.30)'/><text x='50%' y='52%' dominant-baseline='middle' text-anchor='middle' fill='#1e3a8a' font-family='Segoe UI,Arial,sans-serif' font-size='32' font-weight='700'>${escapeSvg(label)}</text></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-async function createProduct(){
-  const role = localStorage.getItem("userRole") || "buyer";
-  if (role !== "seller") {
-    document.getElementById("createOut").textContent = "Only sellers can add products.";
-    return;
-  }
-  const userId = localStorage.getItem("userId");
-  if (!userId) {
-    document.getElementById("createOut").textContent = "User ID is missing. Login again.";
-    return;
-  }
-  const payload = {
-    name: capitalizeFirst(document.getElementById("p_name").value.trim()),
-    description: capitalizeFirst(document.getElementById("p_desc").value.trim()),
-    price: Number(document.getElementById("p_price").value),
-    stock: Number(document.getElementById("p_stock").value),
-    category: capitalizeFirst(document.getElementById("p_cat").value.trim())
-  };
-
-  const res = await fetch("/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-User-Id": String(userId) },
-    body: JSON.stringify(payload)
-  });
-  const text = await res.text();
-  document.getElementById("createOut").textContent = text;
-  loadProducts();
+function escapeSvg(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
-function render(){
-  const q = (document.getElementById("q").value || "").toLowerCase().trim();
-  const list = q ? all.filter(p => (p.category || "").toLowerCase().includes(q)) : all;
-  const role = localStorage.getItem("userRole") || "buyer";
-  const isSeller = role === "seller";
+function productImageSrc(product) {
+  const img = String(product?.image_url || "").trim();
+  return img || placeholderImage(product?.name || "Product");
+}
+
+function formatPrice(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+}
+
+function formatPriceWithUnit(value, unit) {
+  return `${formatPrice(value)} TG/${formatUnit(unit)}`;
+}
+
+function formatUnit(value) {
+  const v = String(value || "").trim().toLowerCase();
+  if (v === "kg") return "kg";
+  if (v === "pack") return "pack";
+  return "piece";
+}
+
+function render() {
+  const q = (document.getElementById("q")?.value || "").toLowerCase().trim();
+  const list = q
+    ? all.filter(p => `${p.name || ""} ${p.category || ""}`.toLowerCase().includes(q))
+    : all;
 
   const rows = document.getElementById("rows");
-  rows.innerHTML = list.map(p => `
-    <tr>
-      <td class="col-id">${p.id ?? "-"}</td>
-      <td class="prod-name">${isSeller ? `<input id="edit-name-${p.id ?? 0}" value="${escapeAttr(p.name ?? "")}" />` : escapeHtml(p.name ?? "Unnamed")}</td>
-      <td>${isSeller ? `<input id="edit-desc-${p.id ?? 0}" value="${escapeAttr(p.description ?? "")}" />` : escapeHtml(p.description ?? "-")}</td>
-      <td>${isSeller ? `<input id="edit-cat-${p.id ?? 0}" value="${escapeAttr(p.category ?? "")}" />` : escapeHtml(p.category ?? "-")}</td>
-      <td>${isSeller ? `<input id="edit-stock-${p.id ?? 0}" type="number" min="0" value="${Number.isFinite(p.stock) ? p.stock : 0}" />` : (Number.isFinite(p.stock) ? p.stock : "-")}</td>
-      <td class="col-price">${isSeller ? `<input id="edit-price-${p.id ?? 0}" type="number" min="0" step="0.01" value="${Number.isFinite(p.price) ? p.price : 0}" />` : (Number.isFinite(p.price) ? p.price : "-")}</td>
-      <td>
-        <div class="qty-control">
-          <button class="qty-btn" type="button" onclick="stepQty(${p.id ?? 0}, -1)" ${p.stock === 0 ? "disabled" : ""}>-</button>
-          <input id="qty-${p.id ?? 0}" type="number" min="0" ${Number.isFinite(p.stock) && p.stock > 0 ? `max="${p.stock}"` : ""} value="0" oninput="clampQty(${p.id ?? 0})" ${p.stock === 0 ? "disabled" : ""} />
-          <button class="qty-btn" type="button" onclick="stepQty(${p.id ?? 0}, 1)" ${p.stock === 0 ? "disabled" : ""}>+</button>
-        </div>
-      </td>
-      <td class="col-add"><button class="btn" onclick="addToCart(${p.id ?? 0})" ${p.stock === 0 ? "disabled" : ""}>Add</button></td>
-      <td class="col-save">${isSeller ? `<button class="btn" type="button" onclick="saveProductRow(${p.id ?? 0})">Save</button>` : `<span class="hint">Seller only</span>`}</td>
-    </tr>
-  `).join("") || `<tr><td colspan="10" class="hint" style="padding:14px;">No products yet. Add seed data in DB or in-memory.</td></tr>`;
+  rows.innerHTML = list.map(renderCard).join("") || `<div class="card hint" style="margin-top:12px;">No products yet.</div>`;
 }
 
-function loadCart(){
+function renderCard(product) {
+  const id = Number(product.id) || 0;
+  const stock = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 0;
+  const userID = Number(localStorage.getItem("userId") || 0);
+  const isOwnProduct = userID > 0 && Number(product.seller_id) === userID;
+  const outOfStock = stock <= 0;
+  const buyingBlocked = outOfStock || isOwnProduct;
+  const imageSrc = productImageSrc(product);
+  const unit = formatUnit(product.unit);
+
+  return `
+    <article class="product-card">
+      <img class="product-image" src="${escapeAttr(imageSrc)}" alt="${escapeAttr(product.name || "Product image")}" loading="lazy" />
+      <div class="product-content">
+        <div class="product-head">
+          <h3 class="product-title">${escapeHtml(product.name || "Unnamed")}</h3>
+          <span class="product-category">${escapeHtml(product.category || "-")}</span>
+        </div>
+
+        <p class="product-desc">${escapeHtml(product.description || "-")}</p>
+
+        <div class="product-meta">
+          <span class="product-price">${formatPriceWithUnit(product.price, unit)}</span>
+          <span class="product-stock ${outOfStock ? "danger" : ""}">Stock: ${stock} ${unit}</span>
+          <span class="product-id">ID: ${id || "-"}</span>
+        </div>
+        ${isOwnProduct ? `<div class="hint danger" style="margin-top:6px;">You cannot buy your own product.</div>` : ""}
+
+        <div class="product-actions">
+          <div class="qty-control">
+            <button class="qty-btn" type="button" onclick="stepQty(${id}, -1)" ${buyingBlocked ? "disabled" : ""}>-</button>
+            <input id="qty-${id}" type="number" min="0" ${stock > 0 ? `max="${stock}"` : ""} value="0" oninput="clampQty(${id})" ${buyingBlocked ? "disabled" : ""} />
+            <button class="qty-btn" type="button" onclick="stepQty(${id}, 1)" ${buyingBlocked ? "disabled" : ""}>+</button>
+          </div>
+          <button class="btn" type="button" onclick="addToCart(${id})" ${buyingBlocked ? "disabled" : ""}>Add to Cart</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function loadCart() {
   try {
     return JSON.parse(localStorage.getItem(CART_KEY) || "[]");
   } catch {
@@ -93,11 +113,11 @@ function loadCart(){
   }
 }
 
-function saveCart(items){
+function saveCart(items) {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
 }
 
-function clampQty(id){
+function clampQty(id) {
   const input = document.getElementById(`qty-${id}`);
   if (!input) return;
   const max = Number(input.max);
@@ -107,22 +127,27 @@ function clampQty(id){
   input.value = val;
 }
 
-function stepQty(id, delta){
+function stepQty(id, delta) {
   const input = document.getElementById(`qty-${id}`);
   if (!input) return;
   input.value = Number(input.value || 1) + delta;
   clampQty(id);
 }
 
-function addToCart(id){
-  const product = all.find(p => p.id === id);
+function addToCart(id) {
+  const product = all.find(p => Number(p.id) === Number(id));
   if (!product) return;
+  const userID = Number(localStorage.getItem("userId") || 0);
+  if (userID > 0 && Number(product.seller_id) === userID) {
+    alert("You cannot buy your own product");
+    return;
+  }
 
   const input = document.getElementById(`qty-${id}`);
   const rawQty = input ? Number(input.value) : 0;
   const qty = Number.isFinite(rawQty) ? Math.floor(rawQty) : 0;
 
-  if (Number.isFinite(product.stock) && product.stock <= 0) {
+  if (Number.isFinite(Number(product.stock)) && Number(product.stock) <= 0) {
     alert("Out of stock");
     return;
   }
@@ -130,24 +155,26 @@ function addToCart(id){
     alert("Select quantity greater than 0");
     return;
   }
-  if (Number.isFinite(product.stock) && qty > product.stock) {
+  if (Number.isFinite(Number(product.stock)) && qty > Number(product.stock)) {
     alert("Not enough stock");
     return;
   }
 
   const cart = loadCart();
-  const existing = cart.find(item => item.id === id);
+  const existing = cart.find(item => Number(item.id) === Number(id));
   if (existing) {
     existing.quantity += qty;
-    if (Number.isFinite(product.stock) && existing.quantity > product.stock) {
-      existing.quantity = product.stock;
+    if (Number.isFinite(Number(product.stock)) && existing.quantity > Number(product.stock)) {
+      existing.quantity = Number(product.stock);
     }
   } else {
     cart.push({
       id: product.id,
       name: product.name,
       description: product.description,
+      image_url: product.image_url,
       category: product.category,
+      unit: formatUnit(product.unit),
       price: product.price,
       stock: product.stock,
       quantity: qty
@@ -157,113 +184,78 @@ function addToCart(id){
   alert("Added to cart");
 }
 
-async function saveProductRow(id){
-  const role = localStorage.getItem("userRole") || "buyer";
-  if (role !== "seller") {
-    alert("Only sellers can edit products");
-    return;
-  }
-  const userId = localStorage.getItem("userId");
-  if (!userId) {
-    alert("User ID is missing. Login again.");
-    return;
-  }
-
-  const name = capitalizeFirst((document.getElementById(`edit-name-${id}`)?.value || "").trim());
-  const description = capitalizeFirst((document.getElementById(`edit-desc-${id}`)?.value || "").trim());
-  const category = capitalizeFirst((document.getElementById(`edit-cat-${id}`)?.value || "").trim());
-  const price = Number(document.getElementById(`edit-price-${id}`)?.value);
-  const stock = Number(document.getElementById(`edit-stock-${id}`)?.value);
-
-  if (!name || !description || !category || !Number.isFinite(price) || !Number.isFinite(stock)) {
-    alert("Invalid input");
-    return;
-  }
-
-  const payload = { id, name, description, price, stock, category };
-  const res = await fetch("/products", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "X-User-Id": String(userId) },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    alert(data.error || "Failed to update product");
-    return;
-  }
-  loadProducts();
+function escapeHtml(s) {
+  return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-function escapeHtml(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-}
-function escapeAttr(s){
+function escapeAttr(s) {
   return String(s)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll("\"","&quot;")
-    .replaceAll("'","&#39;");
-}
-
-function initProductsPage(){
-  const searchInput = document.getElementById("q");
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      const v = searchInput.value;
-      searchInput.value = capitalizeFirst(v);
-      render();
-    });
-  }
-
-  const role = localStorage.getItem("userRole") || "buyer";
-  const createCard = document.getElementById("createProductCard");
-  if (role !== "seller" && createCard) {
-    createCard.style.display = "none";
-  }
-
-  updateAuthButtons();
-  loadProducts();
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function updateAuthButtons() {
-  const userToken = localStorage.getItem('userToken');
-  const userName = localStorage.getItem('userName');
-  
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  const userNameSpan = document.getElementById('userName');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const profileBtn = document.getElementById('profileBtn');
-  if (!loginBtn || !registerBtn || !userNameSpan || !logoutBtn || !profileBtn) {
+  const userToken = localStorage.getItem("userToken");
+  const userName = localStorage.getItem("userName");
+  const userRole = localStorage.getItem("userRole") || "buyer";
+
+  const loginBtn = document.getElementById("loginBtn");
+  const registerBtn = document.getElementById("registerBtn");
+  const userNameSpan = document.getElementById("userName");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const profileBtn = document.getElementById("profileBtn");
+  const sellerProductsBtn = document.getElementById("sellerProductsBtn");
+  const sellerOrdersBtn = document.getElementById("sellerOrdersBtn");
+  const createProductBtn = document.getElementById("createProductBtn");
+
+  if (!loginBtn || !registerBtn || !userNameSpan || !logoutBtn || !profileBtn || !sellerProductsBtn || !sellerOrdersBtn || !createProductBtn) {
     return;
   }
 
   if (userToken) {
-    loginBtn.style.display = 'none';
-    registerBtn.style.display = 'none';
-    userNameSpan.style.display = 'inline';
-    logoutBtn.style.display = 'inline-block';
-    profileBtn.style.display = 'inline-block';
-    userNameSpan.textContent = userName || 'User';
+    loginBtn.style.display = "none";
+    registerBtn.style.display = "none";
+    userNameSpan.style.display = "inline";
+    logoutBtn.style.display = "inline-block";
+    profileBtn.style.display = "inline-block";
+    const canManageProducts = userRole === "seller" || userRole === "administrator";
+    sellerProductsBtn.style.display = canManageProducts ? "inline-flex" : "none";
+    sellerOrdersBtn.style.display = userRole === "seller" ? "inline-flex" : "none";
+    createProductBtn.style.display = canManageProducts ? "inline-flex" : "none";
+    userNameSpan.textContent = userName || "User";
   } else {
-    loginBtn.style.display = 'inline-block';
-    registerBtn.style.display = 'inline-block';
-    userNameSpan.style.display = 'none';
-    logoutBtn.style.display = 'none';
-    profileBtn.style.display = 'none';
+    loginBtn.style.display = "inline-block";
+    registerBtn.style.display = "inline-block";
+    userNameSpan.style.display = "none";
+    logoutBtn.style.display = "none";
+    profileBtn.style.display = "none";
+    sellerProductsBtn.style.display = "none";
+    sellerOrdersBtn.style.display = "none";
+    createProductBtn.style.display = "none";
   }
 }
 
 function logout() {
-  localStorage.removeItem('userToken');
-  localStorage.removeItem('userEmail');
-  localStorage.removeItem('userName');
-  localStorage.removeItem('userRole');
-  localStorage.removeItem('userDate');
-  localStorage.removeItem('userId');
+  localStorage.removeItem("userToken");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userName");
+  localStorage.removeItem("userRole");
+  localStorage.removeItem("userDate");
+  localStorage.removeItem("userId");
   updateAuthButtons();
-  window.location.href = '/';
+  window.location.href = "/";
+}
+
+function initProductsPage() {
+  const searchInput = document.getElementById("q");
+  if (searchInput) {
+    searchInput.addEventListener("input", render);
+  }
+  updateAuthButtons();
+  loadProducts();
 }
 
 if (document.readyState === "loading") {
@@ -272,4 +264,4 @@ if (document.readyState === "loading") {
   initProductsPage();
 }
 
-window.addEventListener('storage', updateAuthButtons);
+window.addEventListener("storage", updateAuthButtons);

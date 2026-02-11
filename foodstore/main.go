@@ -26,10 +26,10 @@ func main() {
 
 	productService := services.NewProductService(productRepo)
 	orderService := services.NewOrderService(orderRepo, productRepo, userRepo)
-	contactService := services.NewContactService(contactRepo)
+	contactService := services.NewContactService(contactRepo, userRepo)
 	userService := services.NewUserService(userRepo)
 
-	ph := handlers.NewProductHandler(productService)
+	ph := handlers.NewProductHandler(productService, userService)
 	oh := handlers.NewOrderHandler(orderService)
 	ch := handlers.NewContactHandler(contactService)
 	uh := handlers.NewUserHandler(userService)
@@ -37,6 +37,8 @@ func main() {
 	http.HandleFunc("/health", handlers.HealthHandler)
 	http.Handle("/products", middleware.RequireSeller(userService, http.HandlerFunc(ph.ListProducts)))
 	http.HandleFunc("/orders", oh.PlaceOrder)
+	http.Handle("/seller/orders", middleware.RequireSellerStrict(userService, http.HandlerFunc(oh.SellerOrders)))
+	http.HandleFunc("/contact/messages", ch.ListMessagesForAdmin)
 	http.HandleFunc("/contact", ch.HandleContact)
 
 	http.HandleFunc("/api/register", uh.Register)
@@ -45,8 +47,11 @@ func main() {
 
 	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("frontend/js"))))
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("frontend/uploads"))))
 
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
+	http.HandleFunc("/ui/seller/products", handlers.SellerProductsPage)
+	http.HandleFunc("/ui/seller/orders", handlers.SellerOrdersPage)
 	http.HandleFunc("/ui/orders", handlers.OrdersPage)
 	http.HandleFunc("/ui/cart", handlers.CartPage)
 	http.HandleFunc("/ui/login", handlers.LoginPage)

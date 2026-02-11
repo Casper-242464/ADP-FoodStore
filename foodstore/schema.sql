@@ -9,19 +9,32 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS products (
   id SERIAL PRIMARY KEY,
+  seller_id INTEGER REFERENCES users(id),
   name TEXT NOT NULL,
   description TEXT NOT NULL,
+  image_url TEXT NOT NULL DEFAULT '',
   price NUMERIC(12,2) NOT NULL,
   stock INTEGER NOT NULL DEFAULT 0,
   category TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'piece',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS seller_id INTEGER;
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS unit TEXT;
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id),
   total_price NUMERIC(12,2) NOT NULL,
   status TEXT NOT NULL,
+  delivery_address TEXT NOT NULL DEFAULT '',
+  phone_number TEXT NOT NULL DEFAULT '',
+  comment TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -44,3 +57,82 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   status TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- Compatibility upgrades for existing databases
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS role TEXT;
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;
+
+UPDATE users SET password_hash = '' WHERE password_hash IS NULL;
+UPDATE users SET role = 'buyer' WHERE role IS NULL OR role = '' OR role NOT IN ('buyer', 'seller', 'administrator');
+UPDATE users SET created_at = NOW() WHERE created_at IS NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM users WHERE role = 'administrator') THEN
+    IF EXISTS (SELECT 1 FROM users WHERE email = 'admin@foodstore.local') THEN
+      UPDATE users
+      SET role = 'administrator',
+          name = COALESCE(NULLIF(name, ''), 'Administrator'),
+          password_hash = COALESCE(NULLIF(password_hash, ''), 'admin123')
+      WHERE email = 'admin@foodstore.local';
+    ELSE
+      INSERT INTO users (name, email, password_hash, role, created_at)
+      VALUES ('Administrator', 'admin@foodstore.local', 'admin123', 'administrator', NOW());
+    END IF;
+  END IF;
+END
+$$;
+
+ALTER TABLE IF EXISTS users ALTER COLUMN password_hash SET DEFAULT '';
+ALTER TABLE IF EXISTS users ALTER COLUMN role SET DEFAULT 'buyer';
+ALTER TABLE IF EXISTS users ALTER COLUMN created_at SET DEFAULT NOW();
+
+ALTER TABLE IF EXISTS users ALTER COLUMN password_hash SET NOT NULL;
+ALTER TABLE IF EXISTS users ALTER COLUMN role SET NOT NULL;
+ALTER TABLE IF EXISTS users ALTER COLUMN created_at SET NOT NULL;
+
+UPDATE products SET unit = 'piece' WHERE unit IS NULL OR unit = '';
+ALTER TABLE IF EXISTS products ALTER COLUMN unit SET DEFAULT 'piece';
+ALTER TABLE IF EXISTS products ALTER COLUMN unit SET NOT NULL;
+
+ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS delivery_address TEXT;
+ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS phone_number TEXT;
+ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS comment TEXT;
+ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;
+UPDATE orders SET status = 'pending' WHERE status IS NULL OR status = '';
+UPDATE orders SET delivery_address = '' WHERE delivery_address IS NULL;
+UPDATE orders SET phone_number = '' WHERE phone_number IS NULL;
+UPDATE orders SET comment = '' WHERE comment IS NULL;
+UPDATE orders SET created_at = NOW() WHERE created_at IS NULL;
+ALTER TABLE IF EXISTS orders ALTER COLUMN status SET DEFAULT 'pending';
+ALTER TABLE IF EXISTS orders ALTER COLUMN delivery_address SET DEFAULT '';
+ALTER TABLE IF EXISTS orders ALTER COLUMN phone_number SET DEFAULT '';
+ALTER TABLE IF EXISTS orders ALTER COLUMN comment SET DEFAULT '';
+ALTER TABLE IF EXISTS orders ALTER COLUMN created_at SET DEFAULT NOW();
+ALTER TABLE IF EXISTS orders ALTER COLUMN status SET NOT NULL;
+ALTER TABLE IF EXISTS orders ALTER COLUMN delivery_address SET NOT NULL;
+ALTER TABLE IF EXISTS orders ALTER COLUMN phone_number SET NOT NULL;
+ALTER TABLE IF EXISTS orders ALTER COLUMN comment SET NOT NULL;
+ALTER TABLE IF EXISTS orders ALTER COLUMN created_at SET NOT NULL;
+
+ALTER TABLE IF EXISTS order_items ADD COLUMN IF NOT EXISTS unit_price NUMERIC(12,2);
+ALTER TABLE IF EXISTS order_items ADD COLUMN IF NOT EXISTS line_total NUMERIC(12,2);
+UPDATE order_items SET unit_price = 0 WHERE unit_price IS NULL;
+UPDATE order_items SET line_total = 0 WHERE line_total IS NULL;
+ALTER TABLE IF EXISTS order_items ALTER COLUMN unit_price SET NOT NULL;
+ALTER TABLE IF EXISTS order_items ALTER COLUMN line_total SET NOT NULL;
+
+ALTER TABLE IF EXISTS contact_messages ADD COLUMN IF NOT EXISTS subject TEXT;
+ALTER TABLE IF EXISTS contact_messages ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE IF EXISTS contact_messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;
+UPDATE contact_messages SET subject = '' WHERE subject IS NULL;
+UPDATE contact_messages SET status = 'new' WHERE status IS NULL OR status = '';
+UPDATE contact_messages SET created_at = NOW() WHERE created_at IS NULL;
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN subject SET DEFAULT '';
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN status SET DEFAULT 'new';
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN created_at SET DEFAULT NOW();
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN subject SET NOT NULL;
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN status SET NOT NULL;
+ALTER TABLE IF EXISTS contact_messages ALTER COLUMN created_at SET NOT NULL;

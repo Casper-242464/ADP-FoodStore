@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -54,13 +54,16 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodPost:
 		var reqBody struct {
-			UserID int `json:"user_id"`
-			Items  []struct {
+			UserID          int    `json:"user_id"`
+			DeliveryAddress string `json:"delivery_address"`
+			PhoneNumber     string `json:"phone_number"`
+			Comment         string `json:"comment"`
+			Items           []struct {
 				ProductID int `json:"product_id"`
 				Quantity  int `json:"quantity"`
 			} `json:"items"`
 		}
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
 			return
@@ -78,9 +81,9 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 				Quantity:  item.Quantity,
 			}
 		}
-		orderID, err := oh.service.PlaceOrder(reqBody.UserID, items)
+		orderID, err := oh.service.PlaceOrder(reqBody.UserID, items, reqBody.DeliveryAddress, reqBody.PhoneNumber, reqBody.Comment)
 		if err != nil {
-			if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrProductNotFound) {
+			if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrProductNotFound) || errors.Is(err, services.ErrInsufficientStock) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -96,4 +99,36 @@ func (oh *OrderHandler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+func (oh *OrderHandler) SellerOrders(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	sellerID, err := getUserIDFromHeader(r)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "missing or invalid user id"})
+		return
+	}
+
+	orders, err := oh.service.ListOrdersForSeller(sellerID)
+	if err != nil {
+		if errors.Is(err, services.ErrInvalidOrder) || errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrSellerRequired) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orders)
 }
