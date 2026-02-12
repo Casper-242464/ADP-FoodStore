@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"foodstore/config"
 	"foodstore/internal/handlers"
@@ -13,6 +14,10 @@ import (
 
 func main() {
 	cfg := config.GetConfig()
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		log.Fatalf("failed to prepare upload directory %q: %v", cfg.UploadDir, err)
+	}
+
 	db, err := config.ConnectDB(cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +34,7 @@ func main() {
 	contactService := services.NewContactService(contactRepo, userRepo)
 	userService := services.NewUserService(userRepo)
 
-	ph := handlers.NewProductHandler(productService, userService)
+	ph := handlers.NewProductHandler(productService, userService, cfg.UploadDir)
 	oh := handlers.NewOrderHandler(orderService)
 	ch := handlers.NewContactHandler(contactService)
 	uh := handlers.NewUserHandler(userService)
@@ -47,7 +52,7 @@ func main() {
 
 	http.Handle("/styles/", http.StripPrefix("/styles/", http.FileServer(http.Dir("frontend/styles"))))
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("frontend/js"))))
-	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("frontend/uploads"))))
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
 
 	http.HandleFunc("/ui/products", handlers.ProductsPage)
 	http.HandleFunc("/ui/seller/products", handlers.SellerProductsPage)
@@ -60,5 +65,6 @@ func main() {
 	http.HandleFunc("/", handlers.HomePage)
 
 	log.Printf("Server running on %s", cfg.ServerAddress)
+	log.Printf("Uploads served from %s", cfg.UploadDir)
 	log.Fatal(http.ListenAndServe(cfg.ServerAddress, middleware.Logging(http.DefaultServeMux)))
 }

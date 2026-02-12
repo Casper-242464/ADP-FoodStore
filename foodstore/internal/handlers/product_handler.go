@@ -20,15 +20,21 @@ import (
 type ProductHandler struct {
 	service     *services.ProductService
 	userService *services.UserService
+	uploadDir   string
 }
 
 const (
 	maxUploadFileBytes = int64(8 << 20) // 8MB
 	maxFormMemoryBytes = int64(16 << 20)
+	defaultUploadDir   = "frontend/uploads"
 )
 
-func NewProductHandler(ps *services.ProductService, us *services.UserService) *ProductHandler {
-	return &ProductHandler{service: ps, userService: us}
+func NewProductHandler(ps *services.ProductService, us *services.UserService, uploadDir string) *ProductHandler {
+	dir := strings.TrimSpace(uploadDir)
+	if dir == "" {
+		dir = defaultUploadDir
+	}
+	return &ProductHandler{service: ps, userService: us, uploadDir: dir}
 }
 
 func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +67,7 @@ func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		reqBody, err := parseProductMultipart(r, true)
+		reqBody, err := parseProductMultipart(r, true, ph.uploadDir)
 		if err != nil {
 			writeJSONError(w, http.StatusBadRequest, err.Error())
 			return
@@ -106,7 +112,7 @@ func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		reqBody, err := parseProductMultipart(r, false)
+		reqBody, err := parseProductMultipart(r, false, ph.uploadDir)
 		if err != nil {
 			writeJSONError(w, http.StatusBadRequest, err.Error())
 			return
@@ -169,7 +175,7 @@ func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if reqBody.HasImage {
-			deleteLocalProductImage(existing.ImageURL)
+			deleteLocalProductImage(existing.ImageURL, ph.uploadDir)
 		}
 
 		writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
@@ -221,7 +227,7 @@ func (ph *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		deleteLocalProductImage(existing.ImageURL)
+		deleteLocalProductImage(existing.ImageURL, ph.uploadDir)
 		writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -248,7 +254,7 @@ type productMultipartRequest struct {
 	HasImage    bool
 }
 
-func parseProductMultipart(r *http.Request, imageRequired bool) (productMultipartRequest, error) {
+func parseProductMultipart(r *http.Request, imageRequired bool, uploadDir string) (productMultipartRequest, error) {
 	contentType := r.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "multipart/form-data") {
 		return productMultipartRequest{}, errors.New("use multipart/form-data")
@@ -280,7 +286,7 @@ func parseProductMultipart(r *http.Request, imageRequired bool) (productMultipar
 		id = parsedID
 	}
 
-	imageURL, hasImage, err := saveUploadedImage(r, "image", imageRequired)
+	imageURL, hasImage, err := saveUploadedImage(r, "image", imageRequired, uploadDir)
 	if err != nil {
 		return productMultipartRequest{}, err
 	}
@@ -314,7 +320,7 @@ func normalizeProductUnit(raw string) (string, error) {
 	}
 }
 
-func saveUploadedImage(r *http.Request, fieldName string, required bool) (string, bool, error) {
+func saveUploadedImage(r *http.Request, fieldName string, required bool, uploadDir string) (string, bool, error) {
 	file, header, err := r.FormFile(fieldName)
 	if err != nil {
 		if errors.Is(err, http.ErrMissingFile) {
@@ -334,12 +340,17 @@ func saveUploadedImage(r *http.Request, fieldName string, required bool) (string
 		return "", false, errors.New("allowed image formats: .jpg, .jpeg, .png, .gif, .webp")
 	}
 
-	if err := os.MkdirAll("frontend/uploads", 0o755); err != nil {
+	dir := strings.TrimSpace(uploadDir)
+	if dir == "" {
+		dir = defaultUploadDir
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", false, errors.New("failed to prepare upload directory")
 	}
 
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	localPath := filepath.Join("frontend/uploads", filename)
+	localPath := filepath.Join(dir, filename)
 	dst, err := os.Create(localPath)
 	if err != nil {
 		return "", false, errors.New("failed to save image file")
@@ -358,7 +369,7 @@ func saveUploadedImage(r *http.Request, fieldName string, required bool) (string
 	return "/uploads/" + filename, true, nil
 }
 
-func deleteLocalProductImage(imageURL string) {
+func deleteLocalProductImage(imageURL string, uploadDir string) {
 	if !strings.HasPrefix(imageURL, "/uploads/") {
 		return
 	}
@@ -366,7 +377,11 @@ func deleteLocalProductImage(imageURL string) {
 	if baseName == "." || baseName == "/" || baseName == "" {
 		return
 	}
-	_ = os.Remove(filepath.Join("frontend/uploads", baseName))
+	dir := strings.TrimSpace(uploadDir)
+	if dir == "" {
+		dir = defaultUploadDir
+	}
+	_ = os.Remove(filepath.Join(dir, baseName))
 }
 
 func getUserIDFromHeader(r *http.Request) (int, error) {

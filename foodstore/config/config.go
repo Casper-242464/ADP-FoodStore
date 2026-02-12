@@ -16,6 +16,7 @@ type Config struct {
 	DBPassword    string
 	DBName        string
 	DBSSLMode     string
+	UploadDir     string
 	ServerAddress string
 }
 
@@ -37,6 +38,7 @@ func GetConfig() *Config {
 		DBPassword:    getEnv("DB_PASSWORD", "123456789"),
 		DBName:        getEnv("DB_NAME", "foodstore"),
 		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
+		UploadDir:     getEnv("UPLOAD_DIR", "frontend/uploads"),
 		ServerAddress: serverAddr,
 	}
 }
